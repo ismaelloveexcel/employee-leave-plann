@@ -8,7 +8,10 @@ export function calculateBusinessDays(startDate: Date, endDate: Date): number {
   
   while (current <= end) {
     const dayOfWeek = current.getDay();
-    if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+    const isWeekday = dayOfWeek !== 5 && dayOfWeek !== 6;
+    const isHoliday = isPublicHoliday(current);
+    
+    if (isWeekday && !isHoliday) {
       count++;
     }
     current.setDate(current.getDate() + 1);

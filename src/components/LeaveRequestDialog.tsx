@@ -129,12 +129,16 @@ export function LeaveRequestDialog({ requests, remainingBalance, onSubmit }: Lea
               onSelectRange={setSelectedRange}
             />
             {selectedDays > 0 && (
-              <div className="flex items-start gap-2 p-3 bg-secondary rounded-md">
-                <Info size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">
-                  You've selected <span className="font-semibold text-foreground">{selectedDays}</span> business{' '}
-                  {selectedDays === 1 ? 'day' : 'days'}. Weekends and public holidays are automatically excluded.
-                </p>
+              <div className="flex items-start gap-2 p-3 bg-secondary/60 rounded-lg border border-border">
+                <Info size={20} className="text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                <div className="text-sm">
+                  <p className="font-semibold text-foreground mb-1">
+                    {selectedDays} business {selectedDays === 1 ? 'day' : 'days'} selected
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Weekends and public holidays are automatically excluded from your leave count.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -142,7 +146,7 @@ export function LeaveRequestDialog({ requests, remainingBalance, onSubmit }: Lea
           <div className="space-y-2">
             <Label htmlFor="leave-type">Leave Type</Label>
             <Select value={leaveType} onValueChange={(value) => setLeaveType(value as LeaveType)}>
-              <SelectTrigger id="leave-type">
+              <SelectTrigger id="leave-type" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -156,9 +160,9 @@ export function LeaveRequestDialog({ requests, remainingBalance, onSubmit }: Lea
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="leave-notes">Notes (Optional)</Label>
             <Textarea
-              id="notes"
+              id="leave-notes"
               placeholder="Add any additional information about your leave request..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
