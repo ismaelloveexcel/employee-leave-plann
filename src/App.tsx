@@ -3,7 +3,7 @@ import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, ShieldCheck } from '@phosphor-icons/react';
+import { Info, ShieldCheck, Sparkle } from '@phosphor-icons/react';
 import { EmployeeHeader } from '@/components/EmployeeHeader';
 import { LeaveBalanceCard } from '@/components/LeaveBalanceCard';
 import { LeaveRequestList } from '@/components/LeaveRequestList';
@@ -182,11 +182,15 @@ function App() {
               </motion.div>
             )}
 
-            {!currentEmployee.managerEmail && myRequests.length === 0 && (
-              <Alert className="bg-muted/30">
-                <Info size={20} weight="fill" />
+            {myRequests.length === 0 && (
+              <Alert className="bg-primary/5 border-primary/20">
+                <Sparkle size={20} weight="fill" className="text-primary" />
                 <AlertDescription className="text-sm">
-                  <span className="font-semibold">Manager email not configured.</span> Your leave requests will be submitted, but email notifications won't be sent. Please contact HR to update your manager information.
+                  <span className="font-semibold">Welcome to Leave Planner 2026! 👋</span>
+                  <p className="mt-1 text-muted-foreground">
+                    Plan your annual leave by clicking "Request Leave" below. Select your dates on the calendar and submit for approval.
+                    {!currentEmployee.managerEmail && " Note: Configure your manager's email in Settings to enable notifications."}
+                  </p>
                 </AlertDescription>
               </Alert>
             )}

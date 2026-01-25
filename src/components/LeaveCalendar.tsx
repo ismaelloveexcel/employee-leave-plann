@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { DayPicker, DateRange, DayProps } from 'react-day-picker';
+import { DayPicker, DateRange } from 'react-day-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CalendarBlank } from '@phosphor-icons/react';
 import { UAE_PUBLIC_HOLIDAYS_2026 } from '@/lib/constants';
-import { getPublicHolidayName, isWeekend } from '@/lib/leave-utils';
+import { isWeekend } from '@/lib/leave-utils';
 import { LeaveRequest } from '@/lib/types';
 import 'react-day-picker/style.css';
 
@@ -49,39 +48,14 @@ export function LeaveCalendar({ requests, selectedRange, onSelectRange }: LeaveC
   };
 
   const modifiersClassNames = {
-    publicHoliday: 'rdp-day_public-holiday bg-accent/20 text-accent-foreground font-semibold',
-    approvedLeave: 'rdp-day_approved-leave bg-primary/10 text-primary font-medium',
+    publicHoliday: 'bg-accent/30 text-accent-foreground font-semibold rounded-md',
+    approvedLeave: 'bg-primary/20 text-primary font-medium rounded-md',
     weekend: 'text-muted-foreground',
   };
 
   const upcomingHolidays = UAE_PUBLIC_HOLIDAYS_2026
     .filter(h => new Date(h.date) >= new Date())
     .slice(0, 3);
-
-  const CustomDay = (props: DayProps) => {
-    const { day } = props;
-    const holidayName = getPublicHolidayName(day.date);
-    
-    if (holidayName) {
-      return (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="relative w-full h-full flex items-center justify-center">
-                {day.date.getDate()}
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{holidayName}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-    
-    return <>{day.date.getDate()}</>;
-  };
 
   return (
     <Card className="h-full">
@@ -113,21 +87,20 @@ export function LeaveCalendar({ requests, selectedRange, onSelectRange }: LeaveC
                 nav: 'space-x-1 flex items-center',
                 button_previous: 'absolute left-1 h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-accent/10 rounded-md transition-all',
                 button_next: 'absolute right-1 h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-accent/10 rounded-md transition-all',
-                month_grid: 'w-full border-collapse space-y-1',
-                weekdays: 'flex',
-                weekday: 'text-muted-foreground rounded-md w-10 font-medium text-sm',
-                week: 'flex w-full mt-2',
-                day: 'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 h-10 w-10',
-                day_button: 'h-10 w-10 p-0 font-normal hover:bg-accent/20 hover:text-accent-foreground rounded-md transition-colors',
-                selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-semibold',
-                today: 'bg-secondary/80 text-secondary-foreground font-semibold',
+                month_grid: 'w-full border-collapse',
+                weekdays: 'flex justify-between',
+                weekday: 'text-muted-foreground w-10 font-medium text-sm text-center',
+                week: 'flex justify-between w-full mt-1',
+                day: 'relative p-0 text-center text-sm focus-within:relative focus-within:z-20',
+                day_button: 'h-10 w-10 p-0 font-normal hover:bg-accent/20 hover:text-accent-foreground rounded-md transition-colors flex items-center justify-center',
+                selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-semibold rounded-md',
+                today: 'bg-secondary text-secondary-foreground font-semibold rounded-md',
                 outside: 'text-muted-foreground opacity-50',
-                disabled: 'text-muted-foreground opacity-50',
-                range_middle: 'aria-selected:bg-accent/20 aria-selected:text-accent-foreground',
+                disabled: 'text-muted-foreground opacity-30 cursor-not-allowed',
+                range_middle: 'aria-selected:bg-accent/20 aria-selected:text-accent-foreground rounded-none',
+                range_start: 'rounded-l-md',
+                range_end: 'rounded-r-md',
                 hidden: 'invisible',
-              }}
-              components={{
-                Day: CustomDay,
               }}
             />
           </div>
