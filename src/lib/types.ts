@@ -22,6 +22,8 @@ export interface Employee {
   department: string;
   leaveBalance: number;
   offsetBalance?: number;
+  managerId?: string;
+  managerEmail?: string;
 }
 
 export interface PublicHoliday {

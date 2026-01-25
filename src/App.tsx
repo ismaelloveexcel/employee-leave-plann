@@ -9,13 +9,17 @@ import { LeaveBalanceCard } from '@/components/LeaveBalanceCard';
 import { LeaveRequestList } from '@/components/LeaveRequestList';
 import { LeaveRequestDialog } from '@/components/LeaveRequestDialog';
 import { LeaveCalendar } from '@/components/LeaveCalendar';
+import { EmailNotificationCard } from '@/components/EmailNotificationCard';
 import { Employee, LeaveRequest } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
+import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
 
 function App() {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [employees] = useKV<Employee[]>('employees', []);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
+  const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
+  const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,7 +63,7 @@ function App() {
     loadEmployee();
   }, [employees]);
 
-  const handleLeaveRequestSubmit = (request: Omit<LeaveRequest, 'id' | 'submittedAt'>) => {
+  const handleLeaveRequestSubmit = async (request: Omit<LeaveRequest, 'id' | 'submittedAt'>) => {
     if (!currentEmployee) return;
 
     const newRequest: LeaveRequest = {
@@ -70,6 +74,25 @@ function App() {
     };
 
     setLeaveRequests(current => [...(current || []), newRequest]);
+
+    const notification = await sendManagerNotification(
+      currentEmployee,
+      newRequest,
+      currentEmployee.managerEmail
+    );
+
+    if (notification) {
+      setEmailNotifications(current => [...(current || []), notification]);
+      setLastNotification(notification);
+      
+      setTimeout(() => {
+        setLastNotification(null);
+      }, 10000);
+    }
+  };
+
+  const handleUpdateEmployee = (updatedEmployee: Employee) => {
+    setCurrentEmployee(updatedEmployee);
   };
 
   if (loading) {
@@ -111,7 +134,7 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <EmployeeHeader employee={currentEmployee} />
+          <EmployeeHeader employee={currentEmployee} onUpdateEmployee={handleUpdateEmployee} />
         </motion.div>
 
         <motion.div
@@ -145,6 +168,28 @@ function App() {
                 onSubmit={handleLeaveRequestSubmit}
               />
             </div>
+
+            {lastNotification && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <EmailNotificationCard 
+                  notification={lastNotification}
+                  managerEmail={currentEmployee.managerEmail}
+                />
+              </motion.div>
+            )}
+
+            {!currentEmployee.managerEmail && myRequests.length === 0 && (
+              <Alert className="bg-muted/30">
+                <Info size={20} weight="fill" />
+                <AlertDescription className="text-sm">
+                  <span className="font-semibold">Manager email not configured.</span> Your leave requests will be submitted, but email notifications won't be sent. Please contact HR to update your manager information.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {remainingBalance < 5 && remainingBalance > 0 && (
               <Alert variant="destructive">

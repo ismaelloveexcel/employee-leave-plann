@@ -41,13 +41,27 @@ This is a focused leave management tool with calendar visualization, form submis
 - **Success criteria**: Accurate calculation shown for both regular and offset days; visual warning appears when balance drops below 5 days; prevents submission exceeding available days
 
 ### 5. My Leave Requests Overview
-- **Functionality**: List view of all submitted leave requests with status indicators
-- **Purpose**: Provides transparency on request status and history
+- **Functionality**: List view of all submitted leave requests with status indicators and email notification history
+- **Purpose**: Provides transparency on request status, history, and confirmation that managers were notified
 - **Trigger**: Displays in sidebar or dedicated section
-- **Progression**: User views dashboard → Requests listed by date → Status badges show Pending/Approved/Rejected → Can expand for details
-- **Success criteria**: All requests visible; status clearly indicated; sorted by submission date (newest first); can be filtered by status
+- **Progression**: User views dashboard → Requests listed by date → Status badges show Pending/Approved/Rejected → Email notification indicator shows if manager was notified → Can expand for details
+- **Success criteria**: All requests visible; status clearly indicated; sorted by submission date (newest first); can be filtered by status; email notification status displayed
 
-### 6. Department Leave Calendar (Optional View)
+### 6. Manager Email Notifications
+- **Functionality**: Automatically sends email notifications to configured manager when employee submits a leave request
+- **Purpose**: Ensures managers are promptly informed of leave requests requiring their approval, reducing delays in the approval process
+- **Trigger**: Automatically triggered upon successful leave request submission
+- **Progression**: Employee submits leave request → System generates formatted email with request details → Email notification sent to manager → Confirmation shown to employee → Notification stored in history
+- **Success criteria**: Email contains all relevant details (employee name, department, dates, leave type, days used, notes); employee sees confirmation that notification was sent; email history is persisted; graceful handling when no manager email is configured
+
+### 7. Employee Settings
+- **Functionality**: Settings dialog where employees can view their profile and configure manager email for notifications
+- **Purpose**: Gives employees control over notification preferences and ensures manager contact information is up to date
+- **Trigger**: User clicks Settings button in header
+- **Progression**: Click settings → Dialog opens → View employee profile → Enter/update manager email → Validate email format → Save → Confirmation message
+- **Success criteria**: Valid email format enforced; changes saved to employee profile; confirmation message shown; future leave requests use updated manager email
+
+### 8. Department Leave Calendar (Optional View)
 - **Functionality**: Aggregated view showing when team members are on leave (names hidden for confidentiality)
 - **Purpose**: Helps employees coordinate leave to ensure adequate team coverage
 - **Trigger**: User clicks "Team Calendar" tab
@@ -57,13 +71,16 @@ This is a focused leave management tool with calendar visualization, form submis
 ## Edge Case Handling
 
 - **No Leave Balance**: Disable leave request button and show warning message with contact HR instruction
+- **No Manager Email Configured**: Allow leave request submission but show warning that no email notification will be sent; provide clear path to configure manager email in settings
+- **Invalid Manager Email**: Validate email format when saving in settings; show error message if invalid
 - **Overlapping Requests**: Prevent submission if dates overlap with existing pending/approved requests
 - **Weekend/Holiday Selection**: Allow but show warning that public holidays don't count against leave balance
 - **Past Date Selection**: Disable all dates before today in calendar picker
 - **2027 Dates**: Restrict calendar to 2026 only; show message for future year planning
-- **First-Time User**: Show welcome message with brief instructions on how to submit leave requests
+- **First-Time User**: Show welcome message with brief instructions on how to submit leave requests and configure manager email
 - **Network Errors**: Display friendly error message with retry option; don't lose form data
 - **Concurrent Submissions**: Handle race conditions by validating balance server-side before confirming
+- **Email Notification Failures**: Store notification in history even if delivery status unknown; show confirmation to employee that notification was prepared
 
 ## Design Direction
 
