@@ -12,6 +12,7 @@ export interface LeaveRequest {
   notes?: string;
   submittedAt: string;
   totalDays: number;
+  offsetDays?: number;
 }
 
 export interface Employee {
@@ -20,6 +21,7 @@ export interface Employee {
   email: string;
   department: string;
   leaveBalance: number;
+  offsetBalance?: number;
 }
 
 export interface PublicHoliday {

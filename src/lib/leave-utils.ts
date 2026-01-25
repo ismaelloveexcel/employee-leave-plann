@@ -77,3 +77,9 @@ export function getTotalLeaveDays(requests: LeaveRequest[]): number {
     .filter(req => req.status === 'approved' || req.status === 'pending')
     .reduce((sum, req) => sum + req.totalDays, 0);
 }
+
+export function getTotalOffsetDays(requests: LeaveRequest[]): number {
+  return requests
+    .filter(req => req.status === 'approved' || req.status === 'pending')
+    .reduce((sum, req) => sum + (req.offsetDays || 0), 0);
+}

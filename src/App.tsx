@@ -10,7 +10,7 @@ import { LeaveRequestList } from '@/components/LeaveRequestList';
 import { LeaveRequestDialog } from '@/components/LeaveRequestDialog';
 import { LeaveCalendar } from '@/components/LeaveCalendar';
 import { Employee, LeaveRequest } from '@/lib/types';
-import { getTotalLeaveDays } from '@/lib/leave-utils';
+import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 
 function App() {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -38,6 +38,7 @@ function App() {
             email: user.email || 'unknown@company.ae',
             department: 'General',
             leaveBalance: 30,
+            offsetBalance: 5,
           });
         }
       } catch (error) {
@@ -48,6 +49,7 @@ function App() {
           email: 'demo@company.ae',
           department: 'General',
           leaveBalance: 30,
+          offsetBalance: 5,
         });
       } finally {
         setLoading(false);
@@ -95,7 +97,9 @@ function App() {
 
   const myRequests = (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id);
   const usedDays = getTotalLeaveDays(myRequests);
+  const usedOffsetDays = getTotalOffsetDays(myRequests);
   const remainingBalance = currentEmployee.leaveBalance - usedDays;
+  const remainingOffsetBalance = (currentEmployee.offsetBalance || 0) - usedOffsetDays;
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,12 +135,13 @@ function App() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="space-y-6"
           >
-            <LeaveBalanceCard totalBalance={currentEmployee.leaveBalance} requests={myRequests} />
+            <LeaveBalanceCard employee={currentEmployee} requests={myRequests} />
             
             <div className="flex justify-center">
               <LeaveRequestDialog
                 requests={myRequests}
                 remainingBalance={remainingBalance}
+                remainingOffsetBalance={remainingOffsetBalance}
                 onSubmit={handleLeaveRequestSubmit}
               />
             </div>
@@ -150,7 +155,7 @@ function App() {
               </Alert>
             )}
 
-            {remainingBalance <= 0 && (
+            {remainingBalance <= 0 && remainingOffsetBalance <= 0 && (
               <Alert variant="destructive">
                 <Info size={20} weight="fill" />
                 <AlertDescription>

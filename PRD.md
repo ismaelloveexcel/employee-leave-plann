@@ -27,18 +27,18 @@ This is a focused leave management tool with calendar visualization, form submis
 - **Success criteria**: All 11 UAE public holidays correctly marked; dates are non-interactive but clearly distinguished from regular days
 
 ### 3. Leave Request Submission
-- **Functionality**: Form to submit leave requests with date range selection and leave type
-- **Purpose**: Allows employees to formally request time off with proper documentation
+- **Functionality**: Form to submit leave requests with date range selection, leave type, and optional offset days usage
+- **Purpose**: Allows employees to formally request time off with proper documentation and utilize carried-over days from previous year
 - **Trigger**: User clicks "Request Leave" button
-- **Progression**: Click button → Dialog opens → Select start/end dates → Choose leave type (Annual/Sick/Emergency) → Add optional notes → Submit → Confirmation message
-- **Success criteria**: Request saved with pending status; dates validated (no past dates, within 2026, doesn't exceed balance); user receives confirmation
+- **Progression**: Click button → Dialog opens → Select start/end dates → Choose leave type (Annual/Sick/Emergency) → Optionally select offset days to use → Add optional notes → Submit → Confirmation message
+- **Success criteria**: Request saved with pending status; dates validated (no past dates, within 2026, doesn't exceed balance); offset days properly calculated; user receives confirmation showing breakdown of regular vs offset days used
 
 ### 4. Leave Balance Tracking
-- **Functionality**: Real-time display of remaining leave days accounting for pending and approved requests
-- **Purpose**: Prevents over-booking and helps employees plan their time off strategically
+- **Functionality**: Real-time display of remaining leave days accounting for pending and approved requests, including offset days (carried over from previous year)
+- **Purpose**: Prevents over-booking and helps employees plan their time off strategically, while making use of carried-over days
 - **Trigger**: Updates automatically when viewing dashboard or after submitting requests
-- **Progression**: Fetch employee data → Calculate: Total balance - (Approved + Pending) → Display with visual indicator → Warn if balance low
-- **Success criteria**: Accurate calculation shown; visual warning appears when balance drops below 5 days; prevents submission exceeding available days
+- **Progression**: Fetch employee data → Calculate: Total balance - (Approved + Pending) → Calculate offset balance → Display with visual indicator → Warn if balance low
+- **Success criteria**: Accurate calculation shown for both regular and offset days; visual warning appears when balance drops below 5 days; prevents submission exceeding available days
 
 ### 5. My Leave Requests Overview
 - **Functionality**: List view of all submitted leave requests with status indicators
