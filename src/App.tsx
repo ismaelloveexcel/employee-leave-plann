@@ -16,7 +16,7 @@ import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
 import { ExportToPdf } from '@/components/ExportToPdf';
 import { ManagerView } from '@/components/ManagerView';
 import { HRAdminPanel } from '@/components/HRAdminPanel';
-import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
+import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
 import { dataSyncService, generateLeave2025Records } from '@/lib/data-sync-service';
@@ -166,7 +166,6 @@ function App() {
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
   const [confirmationStatuses, setConfirmationStatuses] = useKV<Record<string, ConfirmationStatus>>('confirmation-statuses', {});
-  const [auditRecords, setAuditRecords] = useKV<AuditRecord[]>('audit-records', []);
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -183,21 +182,25 @@ function App() {
       }
     }
     
-    // Load locally synced employees if available
+    setLoading(false);
+  }, [employees]);
+  
+  // Separate effect for loading local employees - runs only once on mount
+  useEffect(() => {
+    // Load locally synced employees if available (only on initial mount)
     const localEmployees = dataSyncService.getEmployeesFromLocal();
     if (localEmployees.length > 0) {
       setEmployees(localEmployees);
     }
     
-    // Start auto-sync
+    // Start auto-sync (only starts if API is configured)
     dataSyncService.startAutoSync();
-    
-    setLoading(false);
     
     return () => {
       dataSyncService.stopAutoSync();
     };
-  }, [employees, setEmployees]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle employees updated from HR Admin panel
   const handleEmployeesUpdated = useCallback((updatedEmployees: Employee[]) => {
@@ -313,7 +316,9 @@ function App() {
   const myRequests = (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id);
   const usedDays = getTotalLeaveDays(myRequests);
   const usedOffsetDays = getTotalOffsetDays(myRequests);
-  const remainingBalance = currentEmployee.leaveBalance - usedDays;
+  // Use consistent calculation: annualLeaveEntitlement + openingBalanceFromPreviousYear - usedDays
+  const remainingBalance = (currentEmployee.annualLeaveEntitlement || 0) + 
+    (currentEmployee.openingBalanceFromPreviousYear || 0) - usedDays;
   const remainingOffsetBalance = (currentEmployee.offsetBalance || 0) - usedOffsetDays;
   const employeeLeave2025 = (leave2025Records || SAMPLE_LEAVE_2025)[currentEmployee.id] || [];
   const employeeConfirmationStatus = (confirmationStatuses || {})[currentEmployee.id] || 'pending';

@@ -23,11 +23,8 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
         isZoneRedundant: false
       }
     ]
-    capabilities: [
-      {
-        name: 'EnableServerless'
-      }
-    ]
+    // NOTE: EnableServerless removed - not compatible with free tier
+    // Free tier uses provisioned throughput (400-1000 RU/s free)
   }
 }
 

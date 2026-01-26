@@ -43,5 +43,6 @@ resource staticWebAppConfig 'Microsoft.Web/staticSites/config@2023-01-01' = {
 }
 
 output defaultHostname string = staticWebApp.properties.defaultHostname
-output apiKey string = listSecrets(staticWebApp.id, '2023-01-01').properties.apiKey
+// NOTE: apiKey removed from outputs for security reasons
+// The deployment token should be retrieved directly from Azure Portal or stored in Azure Key Vault
 output resourceId string = staticWebApp.id

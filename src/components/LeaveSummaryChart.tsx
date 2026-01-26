@@ -19,10 +19,11 @@ export function LeaveSummaryChart({ employee, requests }: LeaveSummaryChartProps
   const pendingDays = requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.totalDays, 0);
   const approvedDays = requests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.totalDays, 0);
 
-  // Calculate percentages for the bar
-  const approvedPercent = (approvedDays / totalAvailable) * 100;
-  const pendingPercent = (pendingDays / totalAvailable) * 100;
-  const remainingPercent = (remainingDays / totalAvailable) * 100;
+  // Calculate percentages for the bar, guarding against zero/negative totalAvailable
+  const hasPositiveTotal = totalAvailable > 0;
+  const approvedPercent = hasPositiveTotal ? (approvedDays / totalAvailable) * 100 : 0;
+  const pendingPercent = hasPositiveTotal ? (pendingDays / totalAvailable) * 100 : 0;
+  const remainingPercent = hasPositiveTotal ? (remainingDays / totalAvailable) * 100 : 0;
 
   // Group leaves by month for 2026
   const leavesByMonth: Record<string, number> = {};

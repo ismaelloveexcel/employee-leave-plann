@@ -68,7 +68,7 @@ export function LoginForm({ employees, onLogin }: LoginFormProps) {
   };
 
   const handleWhatsAppClick = () => {
-    window.open('https://wa.me/971564966546', '_blank');
+    window.open('https://wa.me/971564966546', '_blank', 'noopener,noreferrer');
   };
 
   return (

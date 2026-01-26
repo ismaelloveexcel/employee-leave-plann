@@ -69,7 +69,11 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
       if (file.name.endsWith('.csv')) {
         rows = parseCSV(content);
       } else if (file.name.endsWith('.json')) {
-        rows = JSON.parse(content);
+        const parsed = JSON.parse(content);
+        if (!Array.isArray(parsed)) {
+          throw new Error('Invalid JSON format: expected an array of employee objects.');
+        }
+        rows = parsed as Record<string, unknown>[];
       } else {
         throw new Error('Unsupported file format. Please use CSV or JSON.');
       }
@@ -293,8 +297,8 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
               ✅ Standalone Mode - No external services required
             </p>
             <p className="text-xs text-gray-600 mt-1">
-              All data is stored securely in the browser's local storage.
-              Upload your employee CSV once and the app is ready to use.
+              All data is stored locally in this browser using local storage.
+              Avoid using this mode on shared or public devices.
             </p>
           </div>
         </div>

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { UsersThree, CaretDown, CaretUp, CalendarBlank } from '@phosphor-icons/react';
 import { Employee, LeaveRequest } from '@/lib/types';
+import { getTotalLeaveDays } from '@/lib/leave-utils';
 
 interface ManagerViewProps {
   currentEmployee: Employee;
@@ -107,7 +108,8 @@ export function ManagerView({ currentEmployee, allEmployees, allRequests }: Mana
                   <TableBody>
                     {teamMembers.map(emp => {
                       const empRequests = allRequests.filter(r => r.employeeId === emp.id);
-                      const usedDays = empRequests.reduce((sum, r) => sum + r.totalDays, 0);
+                      // Use consistent calculation - only count approved/pending requests
+                      const usedDays = getTotalLeaveDays(empRequests);
                       return (
                         <TableRow key={emp.id}>
                           <TableCell className="font-medium">{emp.name}</TableCell>

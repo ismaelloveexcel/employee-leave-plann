@@ -10,11 +10,24 @@ interface ExportToPdfProps {
   leave2025Records: Leave2025Record[];
 }
 
+// HTML escape function to prevent XSS
+function escapeHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function ExportToPdf({ employee, requests, leave2025Records }: ExportToPdfProps) {
   const handleExport = () => {
     // Generate PDF content as HTML
     const usedDays = getTotalLeaveDays(requests);
-    const remainingDays = employee.leaveBalance - usedDays;
+    // Use consistent balance calculation: annualLeaveEntitlement + openingBalanceFromPreviousYear - usedDays
+    const totalEntitlement = (employee.annualLeaveEntitlement ?? 0) + (employee.openingBalanceFromPreviousYear ?? 0);
+    const remainingDays = totalEntitlement - usedDays;
     const total2025Leaves = leave2025Records.reduce((sum, r) => sum + r.leavesAvailed, 0);
 
     const content = `
@@ -43,17 +56,17 @@ export function ExportToPdf({ employee, requests, leave2025Records }: ExportToPd
         <h1>Leave Plan Report 2026</h1>
         
         <div class="header-info">
-          <p><strong>Employee Name:</strong> ${employee.name}</p>
-          <p><strong>Employee ID:</strong> ${employee.employeeId}</p>
-          <p><strong>Position:</strong> ${employee.position || 'N/A'}</p>
-          <p><strong>Entity:</strong> ${employee.entity || employee.department}</p>
+          <p><strong>Employee Name:</strong> ${escapeHtml(employee.name)}</p>
+          <p><strong>Employee ID:</strong> ${escapeHtml(employee.employeeId)}</p>
+          <p><strong>Position:</strong> ${escapeHtml(employee.position) || 'N/A'}</p>
+          <p><strong>Entity:</strong> ${escapeHtml(employee.entity) || escapeHtml(employee.department)}</p>
           <p><strong>Generated:</strong> ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
         </div>
 
         <h2>2026 Leave Balance Summary</h2>
         <div class="summary">
           <div class="summary-box">
-            <div class="number">${employee.leaveBalance}</div>
+            <div class="number">${totalEntitlement}</div>
             <div>Total Allocation</div>
           </div>
           <div class="summary-box">
@@ -84,8 +97,8 @@ export function ExportToPdf({ employee, requests, leave2025Records }: ExportToPd
                 <td>${new Date(r.startDate).toLocaleDateString('en-GB')}</td>
                 <td>${new Date(r.endDate).toLocaleDateString('en-GB')}</td>
                 <td>${r.totalDays}</td>
-                <td>${r.leaveType}</td>
-                <td>${r.status}</td>
+                <td>${escapeHtml(r.leaveType)}</td>
+                <td>${escapeHtml(r.status)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -104,7 +117,7 @@ export function ExportToPdf({ employee, requests, leave2025Records }: ExportToPd
           <tbody>
             ${leave2025Records.map(r => `
               <tr>
-                <td>${r.month}</td>
+                <td>${escapeHtml(r.month)}</td>
                 <td>${r.leavesAvailed}</td>
               </tr>
             `).join('')}

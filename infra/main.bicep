@@ -45,6 +45,7 @@ module cosmosDb 'modules/cosmosDb.bicep' = {
 
 // Outputs
 output staticWebAppUrl string = staticWebApp.outputs.defaultHostname
-output staticWebAppApiToken string = staticWebApp.outputs.apiKey
 output cosmosDbEndpoint string = cosmosDb.outputs.endpoint
 output resourceGroupName string = resourceGroup.name
+// NOTE: staticWebAppApiToken removed from outputs for security reasons
+// Retrieve the deployment token directly from the Azure Portal or use Azure Key Vault

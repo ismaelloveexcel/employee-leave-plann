@@ -32,6 +32,10 @@ export function LeaveBalanceCard({ employee, requests }: LeaveBalanceCardProps) 
   const currentOffsetBalance = offsetBalance - usedOffsetDays;
   
   const getStatusColor = () => {
+    // Guard against zero/negative entitlement
+    if (!annualLeaveEntitlement || annualLeaveEntitlement <= 0) {
+      return 'text-destructive';
+    }
     const percentage = (currentLeaveBalance / annualLeaveEntitlement) * 100;
     if (percentage >= 50) return 'text-primary';
     if (percentage >= 20) return 'text-accent';

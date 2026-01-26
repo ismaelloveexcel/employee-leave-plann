@@ -58,7 +58,7 @@ export function parseExcelRowToEmployee(row: Record<string, unknown>): Employee 
     const joiningDateStr = String(row['Joining Date'] || row['JoiningDate'] || '');
     const joiningDate = parseDate(joiningDateStr);
     
-    // Generate DOB from joining date for demo (in production, use actual DOB field)
+    // Read DOB from row (fallback to demo default if missing)
     const dob = String(row['DOB'] || row['DateOfBirth'] || row['date_of_birth'] || '01011990');
     
     // Parse monthly leave data
@@ -170,9 +170,10 @@ export class DataSyncService {
     return DataSyncService.instance;
   }
   
-  // Start auto-sync
+  // Start auto-sync (only if base URL is configured)
   startAutoSync(): void {
-    if (API_CONFIG.enableAutoSync && !this.syncInterval) {
+    // Don't start auto-sync if no API is configured - avoids unnecessary timers
+    if (API_CONFIG.enableAutoSync && API_CONFIG.baseUrl && !this.syncInterval) {
       this.syncInterval = setInterval(() => {
         this.syncFromRemote();
       }, API_CONFIG.autoSyncInterval);
@@ -236,15 +237,28 @@ export class DataSyncService {
     }
   }
   
-  // Save employees to local storage
+  // Save employees to local storage (without sensitive dateOfBirth field)
   saveEmployeesToLocal(employees: Employee[]): void {
-    localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
+    // Remove dateOfBirth before persisting to localStorage to avoid storing PII
+    const sanitizedEmployees = employees.map(emp => {
+      const { dateOfBirth, ...rest } = emp as Employee & { dateOfBirth?: string };
+      return rest;
+    });
+    localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(sanitizedEmployees));
   }
   
   // Get employees from local storage
   getEmployeesFromLocal(): Employee[] {
-    const data = localStorage.getItem(STORAGE_KEYS.employees);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.employees);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // If localStorage is corrupted, return empty array
+      console.error('Failed to parse employees from localStorage');
+      return [];
+    }
   }
   
   // Update sync status
@@ -270,8 +284,13 @@ export class DataSyncService {
     newValue?: string,
     notes?: string
   ): AuditRecord {
+    // Use crypto.randomUUID() for better unique ID generation
+    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `AUDIT-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const record: AuditRecord = {
-      id: `AUDIT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id,
       employeeId,
       action,
       previousValue,
@@ -291,8 +310,15 @@ export class DataSyncService {
   
   // Get audit log
   getAuditLog(): AuditRecord[] {
-    const data = localStorage.getItem('leave_planner_audit_log');
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem('leave_planner_audit_log');
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      console.error('Failed to parse audit log from localStorage');
+      return [];
+    }
   }
 }
 
