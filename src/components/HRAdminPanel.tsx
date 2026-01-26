@@ -11,7 +11,7 @@ import {
   Download,
   Users,
   Clock,
-  Cloud,
+  CheckSquare,
   Database
 } from 'lucide-react';
 import { Employee } from '@/lib/types';
@@ -133,24 +133,6 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
     }
   }, [parseCSV, onEmployeesUpdated]);
   
-  // Manual sync
-  const handleManualSync = useCallback(async () => {
-    setUploadStatus('processing');
-    setUploadMessage('Syncing with remote...');
-    
-    const result = await dataSyncService.syncFromRemote();
-    
-    if (result.success) {
-      const employees = dataSyncService.getEmployeesFromLocal();
-      setEmployeeCount(employees.length);
-      onEmployeesUpdated?.(employees);
-    }
-    
-    setUploadStatus(result.success ? 'success' : 'error');
-    setUploadMessage(result.message);
-    setSyncStatus(dataSyncService.getSyncStatus());
-  }, [onEmployeesUpdated]);
-  
   // Download template
   const downloadTemplate = useCallback(() => {
     const headers = [
@@ -199,7 +181,7 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
       <CardHeader className="bg-[#0f025d] text-white rounded-t-lg">
         <CardTitle className="flex items-center gap-2">
           <Database className="h-5 w-5" />
-          HR Admin Panel - Data Management
+          HR Admin Panel - Employee Data Upload
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
@@ -214,11 +196,11 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
           </div>
           
           <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-            <Cloud className="h-8 w-8 text-green-600" />
+            <CheckSquare className="h-8 w-8 text-green-600" />
             <div>
-              <p className="text-sm text-gray-500">Sync Status</p>
+              <p className="text-sm text-gray-500">Storage Mode</p>
               <p className="text-lg font-semibold text-green-700">
-                {syncStatus.status === 'success' ? 'Connected' : 'Local Only'}
+                Browser Storage
               </p>
             </div>
           </div>
@@ -226,11 +208,11 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
           <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
             <Clock className="h-8 w-8 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-500">Last Sync</p>
+              <p className="text-sm text-gray-500">Last Upload</p>
               <p className="text-sm font-medium text-blue-700">
                 {syncStatus.lastSync 
                   ? new Date(syncStatus.lastSync).toLocaleString()
-                  : 'Never'}
+                  : 'Not uploaded yet'}
               </p>
             </div>
           </div>
@@ -265,7 +247,7 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
               >
                 <span>
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploadStatus === 'processing' ? 'Processing...' : 'Upload File'}
+                  {uploadStatus === 'processing' ? 'Processing...' : 'Upload Employee Data'}
                 </span>
               </Button>
             </label>
@@ -276,17 +258,7 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
               className="border-[#38b6ff] text-[#38b6ff]"
             >
               <Download className="h-4 w-4 mr-2" />
-              Download Template
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={handleManualSync}
-              disabled={uploadStatus === 'processing'}
-              className="border-[#0f025d] text-[#0f025d]"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${uploadStatus === 'processing' ? 'animate-spin' : ''}`} />
-              Sync Now
+              Download CSV Template
             </Button>
           </div>
         </div>
@@ -312,17 +284,17 @@ export function HRAdminPanel({ onEmployeesUpdated, currentEmployees = [] }: HRAd
             <li>Download the CSV template using the button above</li>
             <li>Fill in employee data in Excel (keep all column headers)</li>
             <li>Save as CSV and upload using the Upload button</li>
-            <li>Data will automatically sync to the app</li>
-            <li>Employees can then login with their Employee ID and DOB</li>
+            <li>Data will be stored in the browser and available immediately</li>
+            <li>Employees can then login with their Employee ID and DOB (DDMMYYYY format)</li>
           </ol>
           
-          <div className="mt-4 p-3 bg-[#38b6ff]/10 rounded">
-            <p className="text-sm font-medium text-[#0f025d]">
-              💡 For Azure deployment:
+          <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+            <p className="text-sm font-medium text-green-700">
+              ✅ Standalone Mode - No external services required
             </p>
             <p className="text-xs text-gray-600 mt-1">
-              Configure SharePoint or Azure SQL connection in the environment variables.
-              The app will automatically sync with the remote database.
+              All data is stored securely in the browser's local storage.
+              Upload your employee CSV once and the app is ready to use.
             </p>
           </div>
         </div>
