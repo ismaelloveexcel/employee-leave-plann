@@ -10,58 +10,78 @@ import { LeaveRequestList } from '@/components/LeaveRequestList';
 import { LeaveRequestDialog } from '@/components/LeaveRequestDialog';
 import { LeaveCalendar } from '@/components/LeaveCalendar';
 import { EmailNotificationCard } from '@/components/EmailNotificationCard';
+import { LoginForm } from '@/components/LoginForm';
 import { Employee, LeaveRequest } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
 
+// Sample employees data - in production, this would come from a database
+const SAMPLE_EMPLOYEES: Employee[] = [
+  {
+    id: '1',
+    employeeId: 'EMP001',
+    name: 'Ahmed Al Mansoori',
+    email: 'ahmed@company.ae',
+    department: 'Engineering',
+    leaveBalance: 30,
+    offsetBalance: 5,
+    dateOfBirth: '15031990',
+  },
+  {
+    id: '2',
+    employeeId: 'EMP002',
+    name: 'Fatima Hassan',
+    email: 'fatima@company.ae',
+    department: 'HR',
+    leaveBalance: 30,
+    offsetBalance: 3,
+    dateOfBirth: '22071985',
+  },
+  {
+    id: '3',
+    employeeId: 'EMP003',
+    name: 'Mohammed Ali',
+    department: 'Operations',
+    leaveBalance: 30,
+    offsetBalance: 0,
+    dateOfBirth: '10121988',
+  },
+];
+
 function App() {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  const [employees] = useKV<Employee[]>('employees', []);
+  const [employees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadEmployee() {
-      try {
-        const user = await window.spark.user();
-        
-        if (!user) {
-          throw new Error('User not found');
-        }
-        
-        const employee = employees?.find(emp => emp.email === user.email);
-        
-        if (employee) {
-          setCurrentEmployee(employee);
-        } else {
-          setCurrentEmployee({
-            id: String(user.id),
-            name: user.login || 'Unknown User',
-            email: user.email || 'unknown@company.ae',
-            department: 'General',
-            leaveBalance: 30,
-            offsetBalance: 5,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load user:', error);
-        setCurrentEmployee({
-          id: 'demo-user',
-          name: 'Demo User',
-          email: 'demo@company.ae',
-          department: 'General',
-          leaveBalance: 30,
-          offsetBalance: 5,
-        });
-      } finally {
-        setLoading(false);
+    // Check if user is already logged in (session storage)
+    const savedEmployeeId = sessionStorage.getItem('loggedInEmployeeId');
+    if (savedEmployeeId && employees) {
+      const employee = employees.find(emp => emp.id === savedEmployeeId);
+      if (employee) {
+        setCurrentEmployee(employee);
+        setIsAuthenticated(true);
       }
     }
-
-    loadEmployee();
+    setLoading(false);
   }, [employees]);
+
+  const handleLogin = (employee: Employee) => {
+    setCurrentEmployee(employee);
+    setIsAuthenticated(true);
+    // Save to session storage
+    sessionStorage.setItem('loggedInEmployeeId', employee.id);
+  };
+
+  const handleLogout = () => {
+    setCurrentEmployee(null);
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('loggedInEmployeeId');
+  };
 
   const handleLeaveRequestSubmit = async (request: Omit<LeaveRequest, 'id' | 'submittedAt'>) => {
     if (!currentEmployee) return;
@@ -100,21 +120,19 @@ function App() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!currentEmployee) {
+  // Show login form if not authenticated
+  if (!isAuthenticated || !currentEmployee) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Alert>
-          <AlertDescription>
-            Unable to load employee profile. Please contact HR.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <LoginForm 
+        employees={employees || SAMPLE_EMPLOYEES} 
+        onLogin={handleLogin} 
+      />
     );
   }
 
@@ -134,7 +152,7 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <EmployeeHeader employee={currentEmployee} onUpdateEmployee={handleUpdateEmployee} />
+          <EmployeeHeader employee={currentEmployee} onUpdateEmployee={handleUpdateEmployee} onLogout={handleLogout} />
         </motion.div>
 
         <motion.div

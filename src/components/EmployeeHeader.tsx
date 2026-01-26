@@ -1,15 +1,17 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Buildings, User } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
+import { Buildings, IdentificationCard, SignOut } from '@phosphor-icons/react';
 import { Employee } from '@/lib/types';
 import { EmployeeSettings } from './EmployeeSettings';
 
 interface EmployeeHeaderProps {
   employee: Employee;
   onUpdateEmployee: (updatedEmployee: Employee) => void;
+  onLogout?: () => void;
 }
 
-export function EmployeeHeader({ employee, onUpdateEmployee }: EmployeeHeaderProps) {
+export function EmployeeHeader({ employee, onUpdateEmployee, onLogout }: EmployeeHeaderProps) {
   const initials = employee.name
     .split(' ')
     .map(n => n[0])
@@ -35,14 +37,25 @@ export function EmployeeHeader({ employee, onUpdateEmployee }: EmployeeHeaderPro
                   <span>{employee.department}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <User size={18} weight="fill" />
-                  <span className="truncate">{employee.email}</span>
+                  <IdentificationCard size={18} weight="fill" />
+                  <span>{employee.employeeId}</span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-2">
             <EmployeeSettings employee={employee} onUpdateEmployee={onUpdateEmployee} />
+            {onLogout && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground"
+                onClick={onLogout}
+              >
+                <SignOut size={16} weight="fill" />
+                Logout
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

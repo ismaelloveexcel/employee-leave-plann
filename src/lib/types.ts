@@ -17,13 +17,15 @@ export interface LeaveRequest {
 
 export interface Employee {
   id: string;
+  employeeId: string; // Employee ID for login (e.g., "EMP001")
   name: string;
-  email: string;
+  email?: string;
   department: string;
   leaveBalance: number;
   offsetBalance?: number;
   managerId?: string;
   managerEmail?: string;
+  dateOfBirth: string; // DOB as password in format "DDMMYYYY"
 }
 
 export interface PublicHoliday {
