@@ -25,24 +25,27 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.01 240);
   
-  --primary: oklch(0.45 0.08 210);
+  /* Dark blue header: #0f025d */
+  --primary: #0f025d;
   --primary-foreground: oklch(1 0 0);
   
-  --secondary: oklch(0.88 0.04 160);
-  --secondary-foreground: oklch(0.35 0.01 240);
+  /* Light blue accent: #38b6ff */
+  --secondary: #38b6ff;
+  --secondary-foreground: oklch(0.15 0.01 240);
   
-  --muted: oklch(0.88 0.04 160);
+  --muted: oklch(0.92 0.02 240);
   --muted-foreground: oklch(0.45 0.01 240);
   
-  --accent: oklch(0.68 0.16 30);
-  --accent-foreground: oklch(1 0 0);
+  /* Light blue for accents: #38b6ff */
+  --accent: #38b6ff;
+  --accent-foreground: oklch(0.15 0.01 240);
   
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   
   --border: oklch(0.88 0.01 240);
   --input: oklch(0.88 0.01 240);
-  --ring: oklch(0.45 0.08 210);
+  --ring: #0f025d;
   
   --radius: 0.5rem;
 }

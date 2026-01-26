@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, ShieldCheck, Sparkle } from '@phosphor-icons/react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info, ShieldCheck, Sparkle, Warning, CalendarCheck } from '@phosphor-icons/react';
 import { EmployeeHeader } from '@/components/EmployeeHeader';
 import { LeaveBalanceCard } from '@/components/LeaveBalanceCard';
 import { LeaveRequestList } from '@/components/LeaveRequestList';
@@ -11,9 +11,56 @@ import { LeaveRequestDialog } from '@/components/LeaveRequestDialog';
 import { LeaveCalendar } from '@/components/LeaveCalendar';
 import { EmailNotificationCard } from '@/components/EmailNotificationCard';
 import { LoginForm } from '@/components/LoginForm';
-import { Employee, LeaveRequest } from '@/lib/types';
+import { Leave2025ConfirmationCard } from '@/components/Leave2025ConfirmationCard';
+import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
+
+// Sample 2025 leave records - in production, this would come from backend
+const SAMPLE_LEAVE_2025: Record<string, Leave2025Record[]> = {
+  '1': [
+    { month: 'Jan 25', leavesAvailed: 2 },
+    { month: 'Feb 25', leavesAvailed: 0 },
+    { month: 'Mar 25', leavesAvailed: 3 },
+    { month: 'Apr 25', leavesAvailed: 1 },
+    { month: 'May 25', leavesAvailed: 5 },
+    { month: 'Jun 25', leavesAvailed: 0 },
+    { month: 'Jul 25', leavesAvailed: 4 },
+    { month: 'Aug 25', leavesAvailed: 2 },
+    { month: 'Sep 25', leavesAvailed: 0 },
+    { month: 'Oct 25', leavesAvailed: 1 },
+    { month: 'Nov 25', leavesAvailed: 0 },
+    { month: 'Dec 25', leavesAvailed: 3 },
+  ],
+  '2': [
+    { month: 'Jan 25', leavesAvailed: 1 },
+    { month: 'Feb 25', leavesAvailed: 2 },
+    { month: 'Mar 25', leavesAvailed: 0 },
+    { month: 'Apr 25', leavesAvailed: 0 },
+    { month: 'May 25', leavesAvailed: 4 },
+    { month: 'Jun 25', leavesAvailed: 3 },
+    { month: 'Jul 25', leavesAvailed: 5 },
+    { month: 'Aug 25', leavesAvailed: 0 },
+    { month: 'Sep 25', leavesAvailed: 2 },
+    { month: 'Oct 25', leavesAvailed: 0 },
+    { month: 'Nov 25', leavesAvailed: 1 },
+    { month: 'Dec 25', leavesAvailed: 2 },
+  ],
+  '3': [
+    { month: 'Jan 25', leavesAvailed: 0 },
+    { month: 'Feb 25', leavesAvailed: 1 },
+    { month: 'Mar 25', leavesAvailed: 2 },
+    { month: 'Apr 25', leavesAvailed: 0 },
+    { month: 'May 25', leavesAvailed: 3 },
+    { month: 'Jun 25', leavesAvailed: 2 },
+    { month: 'Jul 25', leavesAvailed: 0 },
+    { month: 'Aug 25', leavesAvailed: 4 },
+    { month: 'Sep 25', leavesAvailed: 1 },
+    { month: 'Oct 25', leavesAvailed: 0 },
+    { month: 'Nov 25', leavesAvailed: 2 },
+    { month: 'Dec 25', leavesAvailed: 0 },
+  ],
+};
 
 // Sample employees data - in production, this would come from a database
 const SAMPLE_EMPLOYEES: Employee[] = [
@@ -53,6 +100,9 @@ function App() {
   const [employees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
+  const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
+  const [confirmationStatuses, setConfirmationStatuses] = useKV<Record<string, ConfirmationStatus>>('confirmation-statuses', {});
+  const [auditRecords, setAuditRecords] = useKV<AuditRecord[]>('audit-records', []);
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -115,6 +165,36 @@ function App() {
     setCurrentEmployee(updatedEmployee);
   };
 
+  const handleConfirmBalance = () => {
+    if (!currentEmployee) return;
+    setConfirmationStatuses(current => ({
+      ...current,
+      [currentEmployee.id]: 'confirmed',
+    }));
+  };
+
+  const handleRequestChange = (notes: string, updatedRecords: Leave2025Record[]) => {
+    if (!currentEmployee) return;
+    setConfirmationStatuses(current => ({
+      ...current,
+      [currentEmployee.id]: 'change_requested',
+    }));
+    // Store the proposed changes (in production, this would go to a review queue)
+    setLeave2025Records(current => ({
+      ...current,
+      [`${currentEmployee.id}_proposed`]: updatedRecords,
+    }));
+  };
+
+  const handleAddAuditRecord = (record: Omit<AuditRecord, 'id' | 'timestamp'>) => {
+    const newRecord: AuditRecord = {
+      ...record,
+      id: `AUD-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+    };
+    setAuditRecords(current => [...(current || []), newRecord]);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -141,6 +221,8 @@ function App() {
   const usedOffsetDays = getTotalOffsetDays(myRequests);
   const remainingBalance = currentEmployee.leaveBalance - usedDays;
   const remainingOffsetBalance = (currentEmployee.offsetBalance || 0) - usedOffsetDays;
+  const employeeLeave2025 = (leave2025Records || SAMPLE_LEAVE_2025)[currentEmployee.id] || [];
+  const employeeConfirmationStatus = (confirmationStatuses || {})[currentEmployee.id] || 'pending';
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,25 +237,63 @@ function App() {
           <EmployeeHeader employee={currentEmployee} onUpdateEmployee={handleUpdateEmployee} onLogout={handleLogout} />
         </motion.div>
 
+        {/* 2025 Balance Confirmation Notice */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <Alert className="bg-secondary/50 border-primary/20">
-            <ShieldCheck size={20} className="text-primary" weight="fill" />
-            <AlertDescription className="text-sm">
-              <span className="font-semibold">Confidentiality Notice:</span> Your leave data is private and visible only to you and HR. 
-              Department calendars show leave counts without identifying individuals, ensuring full compliance with UAE data protection regulations.
+          <Alert className="bg-amber-50 border-amber-200">
+            <Warning size={20} className="text-amber-600" weight="fill" />
+            <AlertTitle className="text-amber-800 font-semibold">
+              2025 Leave Balance Confirmation – Action Required
+            </AlertTitle>
+            <AlertDescription className="text-amber-700 text-sm mt-1">
+              Please verify your leave balance as of 31 December 2025.
+              If no discrepancy is reported, the balance will be considered final.
             </AlertDescription>
           </Alert>
+        </motion.div>
+
+        {/* 2026 Leave Planning Notice */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <Alert className="bg-blue-50 border-blue-200">
+            <CalendarCheck size={20} className="text-blue-600" weight="fill" />
+            <AlertTitle className="text-blue-800 font-semibold">
+              2026 Leave Planning
+            </AlertTitle>
+            <AlertDescription className="text-blue-700 text-sm mt-1">
+              Please submit your planned leave dates for forecasting purposes.
+              All annual leave requests remain subject to company policy and formal approval.
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+
+        {/* 2025 Leave Confirmation Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Leave2025ConfirmationCard
+            employee={currentEmployee}
+            leave2025Records={employeeLeave2025}
+            confirmationStatus={employeeConfirmationStatus}
+            onConfirm={handleConfirmBalance}
+            onRequestChange={handleRequestChange}
+            onAddAuditRecord={handleAddAuditRecord}
+          />
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
             className="space-y-6"
           >
             <LeaveBalanceCard employee={currentEmployee} requests={myRequests} />
@@ -198,19 +318,6 @@ function App() {
                   managerEmail={currentEmployee.managerEmail}
                 />
               </motion.div>
-            )}
-
-            {myRequests.length === 0 && (
-              <Alert className="bg-primary/5 border-primary/20">
-                <Sparkle size={20} weight="fill" className="text-primary" />
-                <AlertDescription className="text-sm">
-                  <span className="font-semibold">Welcome to Leave Planner 2026! 👋</span>
-                  <p className="mt-1 text-muted-foreground">
-                    Plan your annual leave by clicking "Request Leave" below. Select your dates on the calendar and submit for approval.
-                    {!currentEmployee.managerEmail && " Note: Configure your manager's email in Settings to enable notifications."}
-                  </p>
-                </AlertDescription>
-              </Alert>
             )}
 
             {remainingBalance < 5 && remainingBalance > 0 && (

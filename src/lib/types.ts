@@ -15,6 +15,35 @@ export interface LeaveRequest {
   offsetDays?: number;
 }
 
+// 2025 Leave History for balance confirmation
+export interface Leave2025Record {
+  month: string; // "Jan 25", "Feb 25", etc.
+  leavesAvailed: number;
+}
+
+export type ConfirmationStatus = 'pending' | 'confirmed' | 'change_requested';
+
+export interface Leave2025Confirmation {
+  employeeId: string;
+  status: ConfirmationStatus;
+  confirmedAt?: string;
+  changeRequestedAt?: string;
+  changeRequestNotes?: string;
+  records: Leave2025Record[];
+}
+
+// Audit record for tracking changes
+export interface AuditRecord {
+  id: string;
+  employeeId: string;
+  action: 'confirm_balance' | 'request_change' | 'edit_leave' | 'admin_update';
+  previousValue?: string;
+  newValue?: string;
+  notes?: string;
+  timestamp: string;
+  performedBy: string;
+}
+
 export interface Employee {
   id: string;
   employeeId: string; // Employee ID for login (e.g., "EMP001")
@@ -26,6 +55,7 @@ export interface Employee {
   managerId?: string;
   managerEmail?: string;
   dateOfBirth: string; // DOB as password in format "DDMMYYYY"
+  leave2025Confirmation?: Leave2025Confirmation;
 }
 
 export interface PublicHoliday {
