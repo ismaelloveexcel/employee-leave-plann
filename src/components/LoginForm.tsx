@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CalendarBlank, IdentificationCard, Lock, Warning } from '@phosphor-icons/react';
+import { CalendarBlank, IdentificationCard, Lock, Warning, WhatsappLogo } from '@phosphor-icons/react';
 import { Employee } from '@/lib/types';
 
 interface LoginFormProps {
@@ -67,11 +67,15 @@ export function LoginForm({ employees, onLogin }: LoginFormProps) {
     }, 500);
   };
 
+  const handleWhatsAppClick = () => {
+    window.open('https://wa.me/971564966546', '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+          <div className="mx-auto bg-[#38b6ff]/10 p-4 rounded-full w-fit">
             <CalendarBlank size={48} className="text-primary" weight="fill" />
           </div>
           <div>
@@ -141,10 +145,17 @@ export function LoginForm({ employees, onLogin }: LoginFormProps) {
             </Button>
           </form>
 
-          <div className="mt-6 pt-4 border-t text-center">
+          <div className="mt-6 pt-4 border-t text-center space-y-3">
             <p className="text-xs text-muted-foreground">
               Forgot your Employee ID? Contact HR for assistance.
             </p>
+            <button
+              onClick={handleWhatsAppClick}
+              className="inline-flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors"
+            >
+              <WhatsappLogo size={24} weight="fill" className="text-green-500" />
+              <span>Contact HR via WhatsApp</span>
+            </button>
           </div>
         </CardContent>
       </Card>

@@ -110,11 +110,11 @@ export function Leave2025ConfirmationCard({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="border-[#38b6ff]/30">
+      <CardHeader className="pb-3 bg-[#38b6ff]/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ClockCounterClockwise size={20} weight="fill" className="text-primary" />
+            <ClockCounterClockwise size={20} weight="fill" className="text-[#38b6ff]" />
             <CardTitle className="text-lg">Leaves for 2025</CardTitle>
           </div>
           <Badge 
@@ -126,7 +126,7 @@ export function Leave2025ConfirmationCard({
             className={
               confirmationStatus === 'confirmed' ? 'bg-green-600' : 
               confirmationStatus === 'change_requested' ? 'bg-amber-500' : 
-              ''
+              'border-[#38b6ff] text-[#38b6ff]'
             }
           >
             {confirmationStatus === 'confirmed' && 'Confirmed'}
@@ -135,11 +135,11 @@ export function Leave2025ConfirmationCard({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="border rounded-lg overflow-hidden">
+      <CardContent className="space-y-4 pt-4">
+        <div className="border border-[#38b6ff]/20 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-[#38b6ff]/10">
                 <TableHead className="font-semibold">Month</TableHead>
                 <TableHead className="font-semibold text-right">Leaves Availed</TableHead>
               </TableRow>
@@ -151,7 +151,7 @@ export function Leave2025ConfirmationCard({
                   <TableCell className="text-right">{record.leavesAvailed}</TableCell>
                 </TableRow>
               ))}
-              <TableRow className="bg-primary/5 font-semibold">
+              <TableRow className="bg-[#38b6ff]/10 font-semibold">
                 <TableCell>Total</TableCell>
                 <TableCell className="text-right">{totalLeavesAvailed} days</TableCell>
               </TableRow>
@@ -163,7 +163,7 @@ export function Leave2025ConfirmationCard({
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button 
               onClick={handleConfirm}
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 bg-[#38b6ff] hover:bg-[#38b6ff]/90"
             >
               <CheckCircle size={18} weight="fill" />
               Confirm Balance is Correct
@@ -173,6 +173,7 @@ export function Leave2025ConfirmationCard({
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
+                  className="flex-1 gap-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff]/10" 
                   className="flex-1 gap-2"
                   onClick={openEditDialog}
                 >

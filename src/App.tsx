@@ -237,63 +237,51 @@ function App() {
           <EmployeeHeader employee={currentEmployee} onUpdateEmployee={handleUpdateEmployee} onLogout={handleLogout} />
         </motion.div>
 
-        {/* 2025 Balance Confirmation Notice */}
+        {/* Combined Notice Card - 2025 Confirmation & 2026 Planning */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <Alert className="bg-amber-50 border-amber-200">
-            <Warning size={20} className="text-amber-600" weight="fill" />
-            <AlertTitle className="text-amber-800 font-semibold">
-              2025 Leave Balance Confirmation – Action Required
-            </AlertTitle>
-            <AlertDescription className="text-amber-700 text-sm mt-1">
-              Please verify your leave balance as of 31 December 2025.
-              If no discrepancy is reported, the balance will be considered final.
-            </AlertDescription>
-          </Alert>
+          <div className="bg-[#38b6ff]/10 border border-[#38b6ff]/30 rounded-lg p-4 space-y-4">
+            {/* 2025 Balance Confirmation Notice */}
+            <div className="flex gap-3">
+              <Warning size={24} className="text-amber-600 flex-shrink-0 mt-0.5" weight="fill" />
+              <div>
+                <h3 className="font-semibold text-amber-800">
+                  2025 Leave Balance Confirmation – Action Required
+                </h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Please verify your leave balance as of 31 December 2025.
+                  If no discrepancy is reported, the balance will be considered final.
+                </p>
+              </div>
+            </div>
+            
+            <div className="border-t border-[#38b6ff]/20" />
+            
+            {/* 2026 Leave Planning Notice */}
+            <div className="flex gap-3">
+              <CalendarCheck size={24} className="text-[#38b6ff] flex-shrink-0 mt-0.5" weight="fill" />
+              <div>
+                <h3 className="font-semibold text-[#0f025d]">
+                  2026 Leave Planning
+                </h3>
+                <p className="text-sm text-gray-700 mt-1">
+                  Please submit your planned leave dates for forecasting purposes.
+                  All annual leave requests remain subject to company policy and formal approval.
+                </p>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
-        {/* 2026 Leave Planning Notice */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-        >
-          <Alert className="bg-blue-50 border-blue-200">
-            <CalendarCheck size={20} className="text-blue-600" weight="fill" />
-            <AlertTitle className="text-blue-800 font-semibold">
-              2026 Leave Planning
-            </AlertTitle>
-            <AlertDescription className="text-blue-700 text-sm mt-1">
-              Please submit your planned leave dates for forecasting purposes.
-              All annual leave requests remain subject to company policy and formal approval.
-            </AlertDescription>
-          </Alert>
-        </motion.div>
-
-        {/* 2025 Leave Confirmation Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <Leave2025ConfirmationCard
-            employee={currentEmployee}
-            leave2025Records={employeeLeave2025}
-            confirmationStatus={employeeConfirmationStatus}
-            onConfirm={handleConfirmBalance}
-            onRequestChange={handleRequestChange}
-            onAddAuditRecord={handleAddAuditRecord}
-          />
-        </motion.div>
-
+        {/* 2026 Leave Planning Section - AT TOP */}
         <div className="grid lg:grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
             className="space-y-6"
           >
             <LeaveBalanceCard employee={currentEmployee} requests={myRequests} />
@@ -342,18 +330,35 @@ function App() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
           >
             <LeaveCalendar requests={myRequests} />
           </motion.div>
         </div>
 
+        {/* My Leave Requests */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
         >
           <LeaveRequestList requests={myRequests} />
+        </motion.div>
+
+        {/* 2025 Leave Confirmation Card - AT BOTTOM */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+        >
+          <Leave2025ConfirmationCard
+            employee={currentEmployee}
+            leave2025Records={employeeLeave2025}
+            confirmationStatus={employeeConfirmationStatus}
+            onConfirm={handleConfirmBalance}
+            onRequestChange={handleRequestChange}
+            onAddAuditRecord={handleAddAuditRecord}
+          />
         </motion.div>
       </div>
     </div>
