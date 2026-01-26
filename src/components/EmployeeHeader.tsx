@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Buildings, Briefcase, IdentificationCard, SignOut } from '@phosphor-icons/react';
+import { Badge } from '@/components/ui/badge';
+import { Buildings, Briefcase, IdentificationCard, SignOut, UserCircle, Clock } from '@phosphor-icons/react';
 import { Employee } from '@/lib/types';
 import { EmployeeSettings } from './EmployeeSettings';
 
@@ -14,26 +15,59 @@ export function EmployeeHeader({ employee, onUpdateEmployee, onLogout }: Employe
   return (
     <Card className="bg-primary text-primary-foreground border-none">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between gap-6">
+        <div className="flex items-start justify-between gap-6">
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">{employee.name}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-primary-foreground/90">
-              {employee.position && (
-                <div className="flex items-center gap-2">
-                  <Briefcase size={18} weight="fill" />
-                  <span>{employee.position}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Buildings size={18} weight="fill" />
-                <span>{employee.entity || employee.department}</span>
+            {/* Employee Name */}
+            <h1 className="text-2xl font-bold tracking-tight mb-3">{employee.name}</h1>
+            
+            {/* Employee Details Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+              {/* Employee No */}
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <IdentificationCard size={16} weight="fill" className="flex-shrink-0" />
+                <span className="text-primary-foreground/70">Employee No:</span>
+                <span className="font-medium">{employee.employeeId}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <IdentificationCard size={18} weight="fill" />
-                <span>{employee.employeeId}</span>
+              
+              {/* Position */}
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Briefcase size={16} weight="fill" className="flex-shrink-0" />
+                <span className="text-primary-foreground/70">Position:</span>
+                <span className="font-medium truncate">{employee.position || 'N/A'}</span>
+              </div>
+              
+              {/* Entity */}
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Buildings size={16} weight="fill" className="flex-shrink-0" />
+                <span className="text-primary-foreground/70">Entity:</span>
+                <span className="font-medium truncate">{employee.entity || employee.department}</span>
+              </div>
+              
+              {/* Employment Status */}
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <UserCircle size={16} weight="fill" className="flex-shrink-0" />
+                <span className="text-primary-foreground/70">Status:</span>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs border-primary-foreground/30 ${
+                    employee.employmentStatus === 'Active' 
+                      ? 'bg-green-500/20 text-green-100' 
+                      : 'bg-yellow-500/20 text-yellow-100'
+                  }`}
+                >
+                  {employee.employmentStatus || 'Active'}
+                </Badge>
+              </div>
+              
+              {/* Extra Hours Compensation */}
+              <div className="flex items-center gap-2 text-primary-foreground/90">
+                <Clock size={16} weight="fill" className="flex-shrink-0" />
+                <span className="text-primary-foreground/70">Extra Hours:</span>
+                <span className="font-medium">{employee.extraHoursCompensation || 'N/A'}</span>
               </div>
             </div>
           </div>
+          
           <div className="flex-shrink-0 flex items-center gap-2">
             <EmployeeSettings employee={employee} onUpdateEmployee={onUpdateEmployee} />
             {onLogout && (

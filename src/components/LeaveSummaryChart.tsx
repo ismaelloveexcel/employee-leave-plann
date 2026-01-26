@@ -9,16 +9,20 @@ interface LeaveSummaryChartProps {
 }
 
 export function LeaveSummaryChart({ employee, requests }: LeaveSummaryChartProps) {
-  const totalBalance = employee.leaveBalance;
+  // Use new field names
+  const annualLeaveEntitlement = employee.annualLeaveEntitlement || employee.leaveBalance;
+  const leaveCarriedOver = employee.openingBalanceFromPreviousYear || 0;
+  const totalAvailable = annualLeaveEntitlement + leaveCarriedOver;
+  
   const usedDays = getTotalLeaveDays(requests);
-  const remainingDays = totalBalance - usedDays;
+  const remainingDays = totalAvailable - usedDays;
   const pendingDays = requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.totalDays, 0);
   const approvedDays = requests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.totalDays, 0);
 
   // Calculate percentages for the bar
-  const approvedPercent = (approvedDays / totalBalance) * 100;
-  const pendingPercent = (pendingDays / totalBalance) * 100;
-  const remainingPercent = (remainingDays / totalBalance) * 100;
+  const approvedPercent = (approvedDays / totalAvailable) * 100;
+  const pendingPercent = (pendingDays / totalAvailable) * 100;
+  const remainingPercent = (remainingDays / totalAvailable) * 100;
 
   // Group leaves by month for 2026
   const leavesByMonth: Record<string, number> = {};
@@ -94,18 +98,22 @@ export function LeaveSummaryChart({ employee, requests }: LeaveSummaryChartProps
         )}
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
+          <div className="text-center p-3 bg-[#38b6ff]/10 rounded-lg border border-[#38b6ff]/20">
+            <p className="text-2xl font-bold text-[#0f025d]">{annualLeaveEntitlement}</p>
+            <p className="text-xs text-muted-foreground">Annual Entitlement</p>
+          </div>
           <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <p className="text-2xl font-bold text-[#0f025d]">{totalBalance}</p>
-            <p className="text-xs text-muted-foreground">Total Allocation</p>
+            <p className="text-2xl font-bold text-[#0f025d]">{leaveCarriedOver}</p>
+            <p className="text-xs text-muted-foreground">Carried Over</p>
           </div>
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <p className="text-2xl font-bold text-green-600">{usedDays}</p>
             <p className="text-xs text-muted-foreground">Used/Planned</p>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
+          <div className="text-center p-3 bg-[#38b6ff]/20 rounded-lg border border-[#38b6ff]/30">
             <p className="text-2xl font-bold text-[#38b6ff]">{remainingDays}</p>
-            <p className="text-xs text-muted-foreground">Available</p>
+            <p className="text-xs text-muted-foreground">Current Balance</p>
           </div>
         </div>
       </CardContent>

@@ -15,6 +15,12 @@ export interface LeaveRequest {
   offsetDays?: number;
 }
 
+// Monthly leave tracking for both Annual Leaves and Offset Days
+export interface MonthlyLeaveRecord {
+  annualLeaves: number;
+  offsetDays: number;
+}
+
 // 2025 Leave History for balance confirmation
 export interface Leave2025Record {
   month: string; // "Jan 25", "Feb 25", etc.
@@ -44,21 +50,79 @@ export interface AuditRecord {
   performedBy: string;
 }
 
+// Employment status type
+export type EmploymentStatus = 'Active' | 'Inactive' | 'On Leave' | 'Terminated';
+
+// Probation status type
+export type ProbationStatus = 'Confirmed' | 'Probation' | 'Extended Probation';
+
+// Extra hours compensation type
+export type ExtraHoursCompensation = 'N/A' | 'Offset' | 'Overtime Pay';
+
+// Work schedule type
+export type WorkSchedule = '5 days' | '6 days' | 'Shift';
+
+// Comprehensive Employee interface with all HR fields
 export interface Employee {
   id: string;
-  employeeId: string; // Employee ID for login (e.g., "EMP001")
+  employeeId: string; // Employee ID for login (e.g., "BAYN00002")
   name: string;
   email?: string;
+  
+  // Organization details
+  entity: string; // Company/entity name (e.g., "Baynunah Watergeneration Technologies SP LLC")
   department: string;
-  position?: string; // Job title/position
-  entity?: string; // Company/entity name
-  leaveBalance: number;
-  offsetBalance?: number;
+  position: string; // Job title/position
+  location?: string; // Office location (e.g., "Head Office")
+  
+  // Employment details
+  workSchedule?: WorkSchedule;
+  joiningDate?: string; // Format: "DD-MMM-YY"
+  sixMonthEvalDate?: string; // 6 Month Evaluation Date
+  probationStatus?: ProbationStatus;
+  employmentStatus: EmploymentStatus;
+  
+  // Leave entitlements
+  annualLeaveEntitlement: number; // Annual leave entitlement days
+  extraHoursCompensation: ExtraHoursCompensation;
+  openingBalanceFromPreviousYear?: number; // Leave carried over from last year
+  leaveBalance: number; // Current leave balance (for backward compatibility)
+  offsetBalance?: number; // Offset days balance
+  
+  // Monthly leave tracking (Jan-Dec)
+  monthlyLeaves?: {
+    january?: MonthlyLeaveRecord;
+    february?: MonthlyLeaveRecord;
+    march?: MonthlyLeaveRecord;
+    april?: MonthlyLeaveRecord;
+    may?: MonthlyLeaveRecord;
+    june?: MonthlyLeaveRecord;
+    july?: MonthlyLeaveRecord;
+    august?: MonthlyLeaveRecord;
+    september?: MonthlyLeaveRecord;
+    october?: MonthlyLeaveRecord;
+    november?: MonthlyLeaveRecord;
+    december?: MonthlyLeaveRecord;
+  };
+  
+  // Leave totals
+  totalAnnualLeavesAccrued?: number;
+  totalAnnualLeavesAvailed?: number;
+  totalOffsetDaysAccrued?: number;
+  totalOffsetDaysAvailed?: number;
+  leaveBalanceEOY?: number; // Leave balance as of End of Year (Annual Leaves)
+  offsetBalanceEOY?: number; // Offset balance as of End of Year
+  
+  // Management
   managerId?: string;
   managerEmail?: string;
-  dateOfBirth: string; // DOB as password in format "DDMMYYYY"
-  leave2025Confirmation?: Leave2025Confirmation;
   isManager?: boolean; // Flag to identify managers
+  
+  // Authentication
+  dateOfBirth: string; // DOB as password in format "DDMMYYYY"
+  
+  // Confirmation
+  leave2025Confirmation?: Leave2025Confirmation;
 }
 
 export interface PublicHoliday {
