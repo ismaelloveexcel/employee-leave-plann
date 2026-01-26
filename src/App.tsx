@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info, ShieldCheck, Sparkle, Warning, CalendarCheck } from '@phosphor-icons/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from '@phosphor-icons/react';
 import { EmployeeHeader } from '@/components/EmployeeHeader';
 import { LeaveBalanceCard } from '@/components/LeaveBalanceCard';
 import { LeaveRequestList } from '@/components/LeaveRequestList';
@@ -12,6 +12,9 @@ import { LeaveCalendar } from '@/components/LeaveCalendar';
 import { EmailNotificationCard } from '@/components/EmailNotificationCard';
 import { LoginForm } from '@/components/LoginForm';
 import { Leave2025ConfirmationCard } from '@/components/Leave2025ConfirmationCard';
+import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
+import { ExportToPdf } from '@/components/ExportToPdf';
+import { ManagerView } from '@/components/ManagerView';
 import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
@@ -70,9 +73,12 @@ const SAMPLE_EMPLOYEES: Employee[] = [
     name: 'Ahmed Al Mansoori',
     email: 'ahmed@company.ae',
     department: 'Engineering',
+    position: 'Senior Software Engineer',
+    entity: 'ABC Holdings LLC',
     leaveBalance: 30,
     offsetBalance: 5,
     dateOfBirth: '15031990',
+    isManager: true,
   },
   {
     id: '2',
@@ -80,15 +86,20 @@ const SAMPLE_EMPLOYEES: Employee[] = [
     name: 'Fatima Hassan',
     email: 'fatima@company.ae',
     department: 'HR',
+    position: 'HR Manager',
+    entity: 'ABC Holdings LLC',
     leaveBalance: 30,
     offsetBalance: 3,
     dateOfBirth: '22071985',
+    isManager: true,
   },
   {
     id: '3',
     employeeId: 'EMP003',
     name: 'Mohammed Ali',
     department: 'Operations',
+    position: 'Operations Coordinator',
+    entity: 'ABC Holdings LLC',
     leaveBalance: 30,
     offsetBalance: 0,
     dateOfBirth: '10121988',
@@ -244,14 +255,16 @@ function App() {
           transition={{ duration: 0.4, delay: 0.1 }}
         >
           <div className="bg-[#38b6ff]/10 border border-[#38b6ff]/30 rounded-lg p-4 space-y-4">
-            {/* 2025 Balance Confirmation Notice */}
+            {/* 1. 2025 Balance Confirmation Notice */}
             <div className="flex gap-3">
-              <Warning size={24} className="text-amber-600 flex-shrink-0 mt-0.5" weight="fill" />
+              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#38b6ff] text-white flex items-center justify-center font-bold text-sm">
+                1
+              </div>
               <div>
-                <h3 className="font-semibold text-amber-800">
+                <h3 className="font-semibold text-[#0f025d] text-base">
                   2025 Leave Balance Confirmation – Action Required
                 </h3>
-                <p className="text-sm text-amber-700 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   Please verify your leave balance as of 31 December 2025.
                   If no discrepancy is reported, the balance will be considered final.
                 </p>
@@ -260,14 +273,16 @@ function App() {
             
             <div className="border-t border-[#38b6ff]/20" />
             
-            {/* 2026 Leave Planning Notice */}
+            {/* 2. 2026 Leave Planning Notice */}
             <div className="flex gap-3">
-              <CalendarCheck size={24} className="text-[#38b6ff] flex-shrink-0 mt-0.5" weight="fill" />
+              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#38b6ff] text-white flex items-center justify-center font-bold text-sm">
+                2
+              </div>
               <div>
-                <h3 className="font-semibold text-[#0f025d]">
+                <h3 className="font-semibold text-[#0f025d] text-base">
                   2026 Leave Planning
                 </h3>
-                <p className="text-sm text-gray-700 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   Please submit your planned leave dates for forecasting purposes.
                   All annual leave requests remain subject to company policy and formal approval.
                 </p>
@@ -286,12 +301,17 @@ function App() {
           >
             <LeaveBalanceCard employee={currentEmployee} requests={myRequests} />
             
-            <div className="flex justify-center">
+            <div className="flex flex-wrap justify-center gap-3">
               <LeaveRequestDialog
                 requests={myRequests}
                 remainingBalance={remainingBalance}
                 remainingOffsetBalance={remainingOffsetBalance}
                 onSubmit={handleLeaveRequestSubmit}
+              />
+              <ExportToPdf 
+                employee={currentEmployee} 
+                requests={myRequests} 
+                leave2025Records={employeeLeave2025}
               />
             </div>
 
@@ -335,6 +355,30 @@ function App() {
             <LeaveCalendar requests={myRequests} />
           </motion.div>
         </div>
+
+        {/* Leave Summary Dashboard */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.28 }}
+        >
+          <LeaveSummaryChart employee={currentEmployee} requests={myRequests} />
+        </motion.div>
+
+        {/* Manager View - only visible to managers */}
+        {currentEmployee.isManager && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.29 }}
+          >
+            <ManagerView 
+              currentEmployee={currentEmployee}
+              allEmployees={employees || SAMPLE_EMPLOYEES}
+              allRequests={leaveRequests || []}
+            />
+          </motion.div>
+        )}
 
         {/* My Leave Requests */}
         <motion.div

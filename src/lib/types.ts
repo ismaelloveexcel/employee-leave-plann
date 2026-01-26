@@ -50,12 +50,15 @@ export interface Employee {
   name: string;
   email?: string;
   department: string;
+  position?: string; // Job title/position
+  entity?: string; // Company/entity name
   leaveBalance: number;
   offsetBalance?: number;
   managerId?: string;
   managerEmail?: string;
   dateOfBirth: string; // DOB as password in format "DDMMYYYY"
   leave2025Confirmation?: Leave2025Confirmation;
+  isManager?: boolean; // Flag to identify managers
 }
 
 export interface PublicHoliday {
