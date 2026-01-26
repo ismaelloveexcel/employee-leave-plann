@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
@@ -15,9 +15,11 @@ import { Leave2025ConfirmationCard } from '@/components/Leave2025ConfirmationCar
 import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
 import { ExportToPdf } from '@/components/ExportToPdf';
 import { ManagerView } from '@/components/ManagerView';
+import { HRAdminPanel } from '@/components/HRAdminPanel';
 import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
+import { dataSyncService, generateLeave2025Records } from '@/lib/data-sync-service';
 
 // Sample 2025 leave records - in production, this would come from backend
 const SAMPLE_LEAVE_2025: Record<string, Leave2025Record[]> = {
@@ -159,7 +161,7 @@ const SAMPLE_EMPLOYEES: Employee[] = [
 
 function App() {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  const [employees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
+  const [employees, setEmployees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
@@ -168,6 +170,7 @@ function App() {
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showHRAdmin, setShowHRAdmin] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in (session storage)
@@ -179,8 +182,37 @@ function App() {
         setIsAuthenticated(true);
       }
     }
+    
+    // Load locally synced employees if available
+    const localEmployees = dataSyncService.getEmployeesFromLocal();
+    if (localEmployees.length > 0) {
+      setEmployees(localEmployees);
+    }
+    
+    // Start auto-sync
+    dataSyncService.startAutoSync();
+    
     setLoading(false);
-  }, [employees]);
+    
+    return () => {
+      dataSyncService.stopAutoSync();
+    };
+  }, [employees, setEmployees]);
+
+  // Handle employees updated from HR Admin panel
+  const handleEmployeesUpdated = useCallback((updatedEmployees: Employee[]) => {
+    setEmployees(updatedEmployees);
+    
+    // Generate 2025 leave records for each employee
+    const newLeave2025: Record<string, Leave2025Record[]> = {};
+    updatedEmployees.forEach(emp => {
+      newLeave2025[emp.id] = generateLeave2025Records(emp);
+    });
+    setLeave2025Records(current => ({
+      ...current,
+      ...newLeave2025,
+    }));
+  }, [setEmployees, setLeave2025Records]);
 
   const handleLogin = (employee: Employee) => {
     setCurrentEmployee(employee);
@@ -428,6 +460,31 @@ function App() {
               allEmployees={employees || SAMPLE_EMPLOYEES}
               allRequests={leaveRequests || []}
             />
+          </motion.div>
+        )}
+
+        {/* HR Admin Panel - only visible to managers with toggle */}
+        {currentEmployee.isManager && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.32 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setShowHRAdmin(!showHRAdmin)}
+                className="flex items-center gap-2 text-[#0f025d] hover:text-[#38b6ff] transition-colors font-medium"
+              >
+                <span>{showHRAdmin ? '▼' : '▶'}</span>
+                <span>HR Admin Panel - Data Management</span>
+              </button>
+            </div>
+            {showHRAdmin && (
+              <HRAdminPanel 
+                currentEmployees={employees || SAMPLE_EMPLOYEES}
+                onEmployeesUpdated={handleEmployeesUpdated}
+              />
+            )}
           </motion.div>
         )}
 

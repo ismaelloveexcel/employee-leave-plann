@@ -173,8 +173,7 @@ export function Leave2025ConfirmationCard({
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="flex-1 gap-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff]/10" 
-                  className="flex-1 gap-2"
+                  className="flex-1 gap-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff]/10"
                   onClick={openEditDialog}
                 >
                   <PencilSimple size={18} weight="fill" />
