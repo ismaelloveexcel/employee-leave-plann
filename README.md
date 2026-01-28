@@ -11,6 +11,8 @@ Deploy this application instantly to production:
 
 **Deployment time: 2-3 minutes** | **No credit card required**
 
+> 💡 **Microsoft/Azure deployment?** See [MICROSOFT-DEPLOYMENT.md](./MICROSOFT-DEPLOYMENT.md) for Azure Static Web Apps, App Service, Container Apps, and Microsoft 365 integrations.
+> 
 > 💡 **Need alternatives?** See [DEPLOYMENT-ALTERNATIVES.md](./DEPLOYMENT-ALTERNATIVES.md) for SaaS solutions like BambooHR, Zoho People, and other ready-made options.
 
 ## ✨ Features
@@ -55,17 +57,28 @@ npm run preview
 3. Deploy in 2-3 minutes
 4. Done!
 
-### Option 3: Azure Static Web Apps
-This repository includes GitHub Actions workflows for Azure:
-- Configured in `.github/workflows/deploy-swa.yml`
-- Requires `AZURE_STATIC_WEB_APPS_API_TOKEN` secret
-- Automatic preview deployments for PRs
+### Option 3: Microsoft Azure (Enterprise)
+Complete Azure deployment with multiple options:
+- **Azure Static Web Apps** - Global CDN, free tier available
+- **Azure App Service** - Full control, staging/production slots
+- **Azure Container Apps** - Kubernetes-based, auto-scaling
+- **Azure DevOps** - Full CI/CD pipelines
+- **Microsoft 365 Integration** - Azure AD, Teams, SharePoint, Power Platform
 
-### Option 4: Azure App Service
-Full-featured deployment with staging/production slots:
-- Configured in `.github/workflows/deploy-appservice.yml`
-- Includes smoke tests and slot swapping
-- Requires Azure credentials as secrets
+**Quick Deploy to Azure:**
+```bash
+# Run automated deployment script
+./employee-leave-azure-agent/scripts/deploy-azure.sh
+
+# Or use PowerShell on Windows
+./employee-leave-azure-agent/scripts/Deploy-Azure.ps1
+```
+
+See [MICROSOFT-DEPLOYMENT.md](./MICROSOFT-DEPLOYMENT.md) for complete Microsoft ecosystem guide.
+
+### Option 4: Other Platforms
+- **Netlify** - Simple, fast deployments
+- **Vercel** - Optimized for frontend frameworks
 
 See [DEPLOYMENT-ALTERNATIVES.md](./DEPLOYMENT-ALTERNATIVES.md) for detailed deployment guides and SaaS alternatives.
 
@@ -83,7 +96,9 @@ See [DEPLOYMENT-ALTERNATIVES.md](./DEPLOYMENT-ALTERNATIVES.md) for detailed depl
 ## 📚 Documentation
 
 - [Product Requirements](./PRD.md) - Full feature specifications
+- [Microsoft Ecosystem Deployment](./MICROSOFT-DEPLOYMENT.md) - Azure, Microsoft 365, Power Platform integrations
 - [Deployment Alternatives](./DEPLOYMENT-ALTERNATIVES.md) - SaaS options and one-click deployments
+- [Quick Deploy Guide](./QUICK-DEPLOY.md) - Step-by-step deployment instructions
 - [Security Policy](./SECURITY.md) - Security guidelines
 
 ## 🆘 Urgent/Emergency Deployment

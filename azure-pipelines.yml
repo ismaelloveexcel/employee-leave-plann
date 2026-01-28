@@ -1,0 +1,336 @@
+# Azure DevOps Pipeline for Employee Leave Planning System
+# Supports deployment to Azure Static Web Apps, App Service, or Container Apps
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    exclude:
+    - README.md
+    - docs/**
+    - '**/*.md'
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+
+variables:
+  # Build variables
+  nodeVersion: '20.x'
+  buildConfiguration: 'Release'
+  
+  # Azure variables (configure in Azure DevOps Library)
+  azureSubscription: 'Azure-Service-Connection' # Service connection name
+  resourceGroupName: 'rg-employee-leave'
+  
+  # Choose deployment target by uncommenting one:
+  deploymentTarget: 'StaticWebApp' # Options: StaticWebApp, AppService, ContainerApps
+  
+  # Static Web Apps
+  staticWebAppName: 'employee-leave-swa'
+  
+  # App Service
+  webAppName: 'employee-leave-web'
+  
+  # Container Apps
+  containerRegistry: 'employeeleaveacr.azurecr.io'
+  containerAppName: 'employee-leave-app'
+  imageName: 'employee-leave'
+  imageTag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: 'Build Application'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build and Test'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: $(nodeVersion)
+    
+    - task: Cache@2
+      displayName: 'Cache npm packages'
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        path: '$(System.DefaultWorkingDirectory)/node_modules'
+        cacheHitVar: 'CacheRestored'
+    
+    - script: |
+        npm ci
+      displayName: 'Install Dependencies'
+      condition: ne(variables.CacheRestored, 'true')
+    
+    - script: |
+        npm run lint
+      displayName: 'Lint Code'
+      continueOnError: true
+    
+    - script: |
+        npm run build
+      displayName: 'Build Application'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Build Artifacts'
+      inputs:
+        pathToPublish: 'dist'
+        artifactName: 'webapp'
+        publishLocation: 'Container'
+    
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Pipeline Artifacts'
+      inputs:
+        targetPath: 'dist'
+        artifact: 'dist'
+
+- stage: DeployStaging
+  displayName: 'Deploy to Staging'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  
+  # Static Web Apps Deployment
+  - deployment: DeployStaticWebApp
+    displayName: 'Deploy to Azure Static Web Apps'
+    condition: eq(variables.deploymentTarget, 'StaticWebApp')
+    environment: 'staging'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: dist
+          
+          - task: AzureStaticWebApp@0
+            displayName: 'Deploy to Static Web Apps'
+            inputs:
+              app_location: '$(Pipeline.Workspace)/dist'
+              skip_app_build: true
+              azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
+  
+  # App Service Deployment
+  - deployment: DeployAppService
+    displayName: 'Deploy to Azure App Service'
+    condition: eq(variables.deploymentTarget, 'AppService')
+    environment: 'staging'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: dist
+          
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy to App Service Staging Slot'
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: $(azureSubscription)
+              appType: 'webAppLinux'
+              WebAppName: $(webAppName)
+              deployToSlotOrASE: true
+              ResourceGroupName: $(resourceGroupName)
+              SlotName: 'staging'
+              packageForLinux: '$(Pipeline.Workspace)/dist'
+              RuntimeStack: 'NODE|20-lts'
+  
+  # Container Apps Deployment
+  - deployment: DeployContainerApp
+    displayName: 'Deploy to Azure Container Apps'
+    condition: eq(variables.deploymentTarget, 'ContainerApps')
+    environment: 'staging'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Docker@2
+            displayName: 'Build Container Image'
+            inputs:
+              containerRegistry: 'ACR-Service-Connection'
+              repository: $(imageName)
+              command: 'build'
+              Dockerfile: 'Dockerfile'
+              tags: |
+                $(imageTag)
+                latest
+          
+          - task: Docker@2
+            displayName: 'Push Container Image'
+            inputs:
+              containerRegistry: 'ACR-Service-Connection'
+              repository: $(imageName)
+              command: 'push'
+              tags: |
+                $(imageTag)
+                latest
+          
+          - task: AzureCLI@2
+            displayName: 'Deploy to Container Apps'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az containerapp update \
+                  --name $(containerAppName) \
+                  --resource-group $(resourceGroupName) \
+                  --image $(containerRegistry)/$(imageName):$(imageTag)
+
+- stage: Test
+  displayName: 'Run Smoke Tests'
+  dependsOn: DeployStaging
+  condition: succeeded()
+  jobs:
+  - job: SmokeTest
+    displayName: 'Smoke Test Staging'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        # Get staging URL based on deployment target
+        if [ "$(deploymentTarget)" == "StaticWebApp" ]; then
+          STAGING_URL="https://$(staticWebAppName).azurestaticapps.net"
+        elif [ "$(deploymentTarget)" == "AppService" ]; then
+          STAGING_URL="https://$(webAppName)-staging.azurewebsites.net"
+        elif [ "$(deploymentTarget)" == "ContainerApps" ]; then
+          STAGING_URL=$(az containerapp show \
+            --name $(containerAppName) \
+            --resource-group $(resourceGroupName) \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          STAGING_URL="https://${STAGING_URL}"
+        fi
+        
+        echo "Testing URL: $STAGING_URL"
+        
+        # Wait for deployment to be ready
+        sleep 30
+        
+        # Test health endpoint
+        response=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL)
+        
+        if [ $response -eq 200 ]; then
+          echo "✓ Smoke test passed! Status: $response"
+          exit 0
+        else
+          echo "✗ Smoke test failed! Status: $response"
+          exit 1
+        fi
+      displayName: 'Run Smoke Tests'
+      env:
+        AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+- stage: DeployProduction
+  displayName: 'Deploy to Production'
+  dependsOn: Test
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: PromoteToProduction
+    displayName: 'Promote to Production'
+    environment: 'production'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # App Service: Swap slots
+          - task: AzureAppServiceManage@0
+            displayName: 'Swap App Service Slots'
+            condition: eq(variables.deploymentTarget, 'AppService')
+            inputs:
+              azureSubscription: $(azureSubscription)
+              Action: 'Swap Slots'
+              WebAppName: $(webAppName)
+              ResourceGroupName: $(resourceGroupName)
+              SourceSlot: 'staging'
+              SwapWithProduction: true
+          
+          # Container Apps: Update production revision
+          - task: AzureCLI@2
+            displayName: 'Activate Production Revision'
+            condition: eq(variables.deploymentTarget, 'ContainerApps')
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Get latest revision
+                REVISION=$(az containerapp revision list \
+                  --name $(containerAppName) \
+                  --resource-group $(resourceGroupName) \
+                  --query '[0].name' -o tsv)
+                
+                # Activate with 100% traffic
+                az containerapp ingress traffic set \
+                  --name $(containerAppName) \
+                  --resource-group $(resourceGroupName) \
+                  --revision-weight $REVISION=100
+          
+          # Static Web Apps: Already in production (no staging)
+          - script: |
+              echo "Static Web Apps deployment is already live in production"
+            displayName: 'Static Web Apps Info'
+            condition: eq(variables.deploymentTarget, 'StaticWebApp')
+
+- stage: Monitoring
+  displayName: 'Post-Deployment Monitoring'
+  dependsOn: DeployProduction
+  condition: succeeded()
+  jobs:
+  - job: MonitoringSetup
+    displayName: 'Configure Monitoring'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Verify Application Insights'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Checking Application Insights configuration..."
+          
+          # Check if App Insights exists
+          APP_INSIGHTS=$(az monitor app-insights component show \
+            --app employee-leave-insights \
+            --resource-group $(resourceGroupName) \
+            --query name -o tsv 2>/dev/null || echo "")
+          
+          if [ -z "$APP_INSIGHTS" ]; then
+            echo "⚠ Application Insights not found. Consider setting it up for monitoring."
+          else
+            echo "✓ Application Insights is configured"
+            
+            # Get instrumentation key
+            INSTRUMENTATION_KEY=$(az monitor app-insights component show \
+              --app employee-leave-insights \
+              --resource-group $(resourceGroupName) \
+              --query instrumentationKey -o tsv)
+            
+            echo "##vso[task.setvariable variable=instrumentationKey]$INSTRUMENTATION_KEY"
+          fi
+    
+    - script: |
+        echo "================================================"
+        echo "Deployment Summary"
+        echo "================================================"
+        echo "Build ID: $(Build.BuildId)"
+        echo "Deployment Target: $(deploymentTarget)"
+        echo "Environment: Production"
+        echo "Status: ✓ Successful"
+        echo "================================================"
+      displayName: 'Deployment Summary'
