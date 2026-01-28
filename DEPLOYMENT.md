@@ -58,11 +58,9 @@ az login
 az account set --subscription "YOUR_SUBSCRIPTION_NAME"
 
 # Create resource group
-az group create \
-  --name rg-employee-leave \
-  --location eastus
+az group create -n rg-employee-leave -l eastus
 
-# Create Static Web App
+# Create Static Web App (note: using eastus2 for Static Web Apps as it has better availability)
 az staticwebapp create \
   --name employee-leave-swa \
   --resource-group rg-employee-leave \
@@ -129,27 +127,45 @@ az deployment group create \
 
 ### Configure OIDC Authentication (Recommended)
 
-1. **Create Service Principal:**
+1. **Create Service Principal & Federated Credential:**
 
+First, get your subscription ID:
 ```bash
-az ad sp create-for-rbac \
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+```
+
+Create Service Principal:
+```bash
+APP_ID=$(az ad sp create-for-rbac \
   --name "gh-employee-leave" \
   --role contributor \
-  --scopes /subscriptions/{SUBSCRIPTION_ID}/resourceGroups/rg-employee-leave \
-  --sdk-auth
+  --scopes /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/rg-employee-leave \
+  --query appId -o tsv)
+```
+
+Get tenant ID:
+```bash
+TENANT_ID=$(az account show --query tenantId -o tsv)
 ```
 
 2. **Add Federated Credential:**
 
+Replace YOUR_USERNAME and YOUR_REPO with your values:
 ```bash
+cat <<EOF > federated-cred.json
+{
+  "name": "github-federated",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:YOUR_USERNAME/YOUR_REPO:ref:refs/heads/main",
+  "audiences": ["api://AzureADTokenExchange"]
+}
+EOF
+
 az ad app federated-credential create \
-  --id {APP_ID} \
-  --parameters '{
-    "name": "github-federated",
-    "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:YOUR_USERNAME/employee-leave-plann:ref:refs/heads/main",
-    "audiences": ["api://AzureADTokenExchange"]
-  }'
+  --id ${APP_ID} \
+  --parameters @federated-cred.json
+
+rm federated-cred.json
 ```
 
 3. **Add GitHub Secrets:**

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # Color codes for output
@@ -79,13 +79,33 @@ fi
 # Ask for custom names (optional)
 echo ""
 read -p "Resource Group name [default: $RESOURCE_GROUP]: " custom_rg
-RESOURCE_GROUP=${custom_rg:-$RESOURCE_GROUP}
+if [ -n "$custom_rg" ]; then
+    # Validate resource group name (alphanumeric, hyphens, underscores, periods, parentheses)
+    if [[ ! "$custom_rg" =~ ^[a-zA-Z0-9._()-]+$ ]] || [ ${#custom_rg} -gt 90 ]; then
+        echo -e "${RED}❌ Invalid resource group name. Use only alphanumeric, hyphens, underscores, periods, and parentheses (max 90 chars)${NC}"
+        exit 1
+    fi
+    RESOURCE_GROUP="$custom_rg"
+fi
 
 read -p "App name [default: $APP_NAME]: " custom_app
-APP_NAME=${custom_app:-$APP_NAME}
+if [ -n "$custom_app" ]; then
+    # Validate app name (alphanumeric and hyphens only)
+    if [[ ! "$custom_app" =~ ^[a-zA-Z0-9-]+$ ]] || [ ${#custom_app} -gt 60 ]; then
+        echo -e "${RED}❌ Invalid app name. Use only alphanumeric and hyphens (max 60 chars)${NC}"
+        exit 1
+    fi
+    APP_NAME="$custom_app"
+fi
 
 read -p "Azure location [default: $LOCATION]: " custom_location
-LOCATION=${custom_location:-$LOCATION}
+if [ -n "$custom_location" ]; then
+    # Verify location is valid
+    if ! az account list-locations --query "[?name=='$custom_location'].name" -o tsv | grep -q "$custom_location"; then
+        echo -e "${YELLOW}⚠️  Location '$custom_location' may not be valid. Proceeding anyway...${NC}"
+    fi
+    LOCATION="$custom_location"
+fi
 
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
@@ -108,8 +128,12 @@ fi
 # Create resource group
 echo ""
 echo -e "${YELLOW}📦 Creating resource group: $RESOURCE_GROUP...${NC}"
-az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
-echo -e "${GREEN}✅ Resource group created${NC}"
+if az group exists --name "$RESOURCE_GROUP" | grep -q "true"; then
+    echo -e "${GREEN}✅ Resource group already exists${NC}"
+else
+    az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
+    echo -e "${GREEN}✅ Resource group created${NC}"
+fi
 
 if [ "$DEPLOYMENT_TYPE" = "swa" ]; then
     # Azure Static Web Apps deployment
@@ -130,14 +154,17 @@ if [ "$DEPLOYMENT_TYPE" = "swa" ]; then
     
     # Create Static Web App without GitHub integration first (to avoid token issues)
     echo "Creating Static Web App resource..."
-    az staticwebapp create \
-        --name "$APP_NAME" \
-        --resource-group "$RESOURCE_GROUP" \
-        --location "$LOCATION" \
-        --sku Free \
-        --output none
-    
-    echo -e "${GREEN}✅ Static Web App created${NC}"
+    if az staticwebapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+        echo -e "${GREEN}✅ Static Web App already exists${NC}"
+    else
+        az staticwebapp create \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --location "$LOCATION" \
+            --sku Free \
+            --output none
+        echo -e "${GREEN}✅ Static Web App created${NC}"
+    fi
     
     # Get deployment token
     echo ""
@@ -147,8 +174,14 @@ if [ "$DEPLOYMENT_TYPE" = "swa" ]; then
         --resource-group "$RESOURCE_GROUP" \
         --query "properties.apiKey" -o tsv)
     
-    if [ -z "$DEPLOYMENT_TOKEN" ]; then
+    if [ -z "$DEPLOYMENT_TOKEN" ] || [ "$DEPLOYMENT_TOKEN" = "null" ]; then
         echo -e "${RED}❌ Failed to retrieve deployment token${NC}"
+        exit 1
+    fi
+    
+    # Validate token format (should be a long alphanumeric string)
+    if [ ${#DEPLOYMENT_TOKEN} -lt 30 ]; then
+        echo -e "${RED}❌ Retrieved token appears invalid (too short)${NC}"
         exit 1
     fi
     
@@ -166,15 +199,22 @@ if [ "$DEPLOYMENT_TYPE" = "swa" ]; then
         echo "Please add the following secret to your GitHub repository:"
         echo ""
         echo "  Name:  AZURE_STATIC_WEB_APPS_API_TOKEN"
-        echo "  Value: $DEPLOYMENT_TOKEN"
+        echo "  Value: (token will be shown after you press Enter)"
         echo ""
         echo "Steps:"
         echo "  1. Go to your GitHub repository"
         echo "  2. Navigate to Settings → Secrets and variables → Actions"
         echo "  3. Click 'New repository secret'"
-        echo "  4. Add the secret with the name and value above"
+        echo "  4. Add the secret with the name above"
         echo ""
-        read -p "Press Enter once you've added the secret..."
+        read -p "Press Enter to reveal the token (WARNING: Clear your terminal history after copying)..."
+        echo ""
+        echo "AZURE_STATIC_WEB_APPS_API_TOKEN:"
+        echo "$DEPLOYMENT_TOKEN"
+        echo ""
+        echo -e "${RED}⚠️  SECURITY: Clear your terminal history after copying this token!${NC}"
+        echo ""
+        read -p "Press Enter once you've added the secret and cleared history..."
     fi
     
     # Get the Static Web App URL
@@ -204,10 +244,18 @@ elif [ "$DEPLOYMENT_TYPE" = "appservice" ]; then
     echo ""
     echo -e "${YELLOW}🌐 Creating Azure App Service infrastructure...${NC}"
     
+    # Check if Bicep template exists
+    BICEP_TEMPLATE="employee-leave-azure-agent/infra/bicep/appservice.bicep"
+    if [ ! -f "$BICEP_TEMPLATE" ]; then
+        echo -e "${RED}❌ Bicep template not found at: $BICEP_TEMPLATE${NC}"
+        echo "Please ensure you're running this script from the repository root."
+        exit 1
+    fi
+    
     # Deploy Bicep template
     az deployment group create \
         --resource-group "$RESOURCE_GROUP" \
-        --template-file employee-leave-azure-agent/infra/bicep/appservice.bicep \
+        --template-file "$BICEP_TEMPLATE" \
         --parameters webAppName="$APP_NAME" planName="plan-$APP_NAME" sku=B1 \
         --output none
     
@@ -283,6 +331,8 @@ EOF
         echo "Please add the following secrets to your GitHub repository:"
         echo ""
         echo "  Secrets (Settings → Secrets and variables → Actions → New secret):"
+        read -p "Press Enter to reveal credentials (WARNING: Clear terminal history after)..."
+        echo ""
         echo "    AZURE_CLIENT_ID: $APP_ID"
         echo "    AZURE_TENANT_ID: $TENANT_ID"
         echo "    AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
@@ -291,7 +341,9 @@ EOF
         echo "    AZURE_WEBAPP_NAME: $APP_NAME"
         echo "    AZURE_RESOURCE_GROUP: $RESOURCE_GROUP"
         echo ""
-        read -p "Press Enter once you've added the secrets and variables..."
+        echo -e "${RED}⚠️  SECURITY: Clear your terminal history after copying these values!${NC}"
+        echo ""
+        read -p "Press Enter once you've added the secrets and variables and cleared history..."
     fi
     
     # Get App Service URLs
