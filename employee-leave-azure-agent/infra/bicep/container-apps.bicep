@@ -45,7 +45,7 @@ resource environment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   }
 }
 
-// Container Registry
+// Container Registry (admin disabled for security)
 resource acr 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: acrName
   location: location
@@ -53,11 +53,11 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: true
+    adminUserEnabled: false // Use managed identity instead
   }
 }
 
-// Container App
+// Container App with Managed Identity authentication to ACR
 resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: containerAppName
   location: location
@@ -82,14 +82,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
       registries: [
         {
           server: '${acrName}.azurecr.io'
-          username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
-        }
-      ]
-      secrets: [
-        {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
+          identity: 'system'
         }
       ]
     }
@@ -128,7 +121,18 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   }
 }
 
+// Grant Container App system identity AcrPull role on Container Registry
+resource acrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, containerApp.id, 'acrpull')
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d') // AcrPull role
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output containerAppUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output containerAppId string = containerApp.id
 output acrLoginServer string = acr.properties.loginServer
-output acrUsername string = acr.listCredentials().username
+output containerAppPrincipalId string = containerApp.identity.principalId

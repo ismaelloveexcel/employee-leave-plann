@@ -22,6 +22,14 @@ if ! command -v az &> /dev/null; then
     exit 1
 fi
 
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo -e "${RED}Error: jq not found. Please install jq for JSON parsing.${NC}"
+    echo -e "${YELLOW}On Ubuntu/Debian: sudo apt-get install jq${NC}"
+    echo -e "${YELLOW}On macOS: brew install jq${NC}"
+    exit 1
+fi
+
 # Check if logged in
 if ! az account show &> /dev/null; then
     echo -e "${YELLOW}Not logged in to Azure. Running 'az login'...${NC}"

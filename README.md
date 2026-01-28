@@ -97,6 +97,7 @@ See [DEPLOYMENT-ALTERNATIVES.md](./DEPLOYMENT-ALTERNATIVES.md) for detailed depl
 
 - [Product Requirements](./PRD.md) - Full feature specifications
 - [Microsoft Ecosystem Deployment](./MICROSOFT-DEPLOYMENT.md) - Azure, Microsoft 365, Power Platform integrations
+- [Microsoft Quick Start](./MICROSOFT-QUICK-START.md) - Fast Azure deployment reference
 - [Deployment Alternatives](./DEPLOYMENT-ALTERNATIVES.md) - SaaS options and one-click deployments
 - [Quick Deploy Guide](./QUICK-DEPLOY.md) - Step-by-step deployment instructions
 - [Security Policy](./SECURITY.md) - Security guidelines
