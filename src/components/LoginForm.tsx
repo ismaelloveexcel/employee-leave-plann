@@ -75,14 +75,20 @@ export function LoginForm({ employees, onLogin }: LoginFormProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto bg-[#38b6ff]/10 p-4 rounded-full w-fit">
-            <CalendarBlank size={48} className="text-primary" weight="fill" />
+          <div className="mx-auto flex justify-center">
+             <img src="/logo.svg" alt="Company Logo" className="h-24 object-contain" onError={(e) => {
+               // Fallback if image fails to load
+               const target = e.target as HTMLImageElement;
+               target.style.display = 'none';
+               target.nextElementSibling?.classList.remove('hidden');
+             }} />
+             {/* Fallback icon if logo is missing */}
+             <div className="hidden bg-[#38b6ff]/10 p-4 rounded-full w-fit">
+                <CalendarBlank size={48} className="text-primary" weight="fill" />
+             </div>
           </div>
           <div>
             <CardTitle className="text-2xl">Leave Planner 2026</CardTitle>
-            <CardDescription className="mt-2">
-              Enter your Employee ID and Date of Birth to access your leave planner
-            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -149,13 +155,15 @@ export function LoginForm({ employees, onLogin }: LoginFormProps) {
             <p className="text-xs text-muted-foreground">
               Forgot your Employee ID? Contact HR for assistance.
             </p>
-            <button
-              onClick={handleWhatsAppClick}
-              className="inline-flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors"
-            >
-              <WhatsappLogo size={24} weight="fill" className="text-green-500" />
-              <span>Contact HR via WhatsApp</span>
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={handleWhatsAppClick}
+                className="p-2 hover:bg-green-50 rounded-full transition-colors"
+                title="Whatsapp HR"
+              >
+                <WhatsappLogo size={32} weight="fill" className="text-green-500" />
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
