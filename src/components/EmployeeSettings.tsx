@@ -61,7 +61,11 @@ export function EmployeeSettings({ employee, onUpdateEmployee }: EmployeeSetting
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground"
+        >
           <Gear size={16} weight="fill" />
           Settings
         </Button>

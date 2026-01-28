@@ -28,7 +28,7 @@ export async function sendManagerNotification(
   managerEmail?: string
 ): Promise<EmailNotification | null> {
   if (!managerEmail) {
-    console.log('No manager email configured for employee:', employee.email);
+    console.log('No manager email configured for employee:', employee.employeeId);
     return null;
   }
 
