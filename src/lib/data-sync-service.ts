@@ -247,7 +247,33 @@ export class DataSyncService {
     localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(sanitizedEmployees));
   }
   
-  // Get employees from local storage
+  // Get employees from local storage, with fallback to initial data fetch
+  async getEmployees(): Promise<Employee[]> {
+    try {
+      // 1. Try Local Storage
+      const data = localStorage.getItem(STORAGE_KEYS.employees);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+
+      // 2. Try Fetching Default Data (Seeding)
+      console.log('No local data found. Fetching default data...');
+      const response = await fetch('/data/employees.json');
+      if (response.ok) {
+        const defaultData = await response.json();
+        this.saveEmployeesToLocal(defaultData); // Cache it
+        return defaultData;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Failed to get employees:', error);
+      return [];
+    }
+  }
+
+  // Get employees from local storage (Synchronous version for direct access if needed)
   getEmployeesFromLocal(): Employee[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.employees);
