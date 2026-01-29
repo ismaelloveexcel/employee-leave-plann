@@ -241,6 +241,7 @@ export class DataSyncService {
   saveEmployeesToLocal(employees: Employee[]): void {
     // Remove dateOfBirth before persisting to localStorage to avoid storing PII
     const sanitizedEmployees = employees.map(emp => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { dateOfBirth, ...rest } = emp as Employee & { dateOfBirth?: string };
       return rest;
     });

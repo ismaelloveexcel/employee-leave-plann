@@ -145,7 +145,7 @@ export function Leave2025ConfirmationCard({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayRecords.map((record, index) => (
+              {displayRecords.map((record) => (
                 <TableRow key={record.month}>
                   <TableCell className="font-medium">{record.month}</TableCell>
                   <TableCell className="text-right">{record.leavesAvailed}</TableCell>
