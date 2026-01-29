@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { EnvelopeSimple, Check, X, Eye, EyeSlash } from '@phosphor-icons/react';
+import { EnvelopeSimple, Check, Eye, EyeSlash } from '@phosphor-icons/react';
 import { EmailNotification } from '@/lib/email-service';
 
 interface EmailNotificationCardProps {

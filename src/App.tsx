@@ -163,7 +163,7 @@ function App() {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
-  const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
+  const [, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
   const [confirmationStatuses, setConfirmationStatuses] = useKV<Record<string, ConfirmationStatus>>('confirmation-statuses', {});
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
