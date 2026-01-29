@@ -47,7 +47,7 @@ jobs:
             return pr.head.sha;
 
       - name: Download artifact from CI workflow
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: ci.yml
           commit: ${{ steps.pr.outputs.result }}
