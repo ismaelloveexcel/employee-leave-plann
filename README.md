@@ -22,6 +22,7 @@ A comprehensive leave management system for UAE-based organizations that enables
 
 ## 🎯 Features
 
+### Core Leave Management
 - ✅ **Employee Authentication** - Secure login with Employee ID and Date of Birth
 - ✅ **Leave Balance Tracking** - Real-time balance with offset days from 2025
 - ✅ **2026 Calendar** - Interactive calendar with UAE public holidays
@@ -31,6 +32,15 @@ A comprehensive leave management system for UAE-based organizations that enables
 - ✅ **PDF Export** - Download leave summary for records
 - ✅ **Manager View** - Team leave overview for managers
 - ✅ **HR Admin Panel** - Employee data management
+
+### 🆕 Employee Self-Service Update
+- ✅ **Update Contact Details** - Employees can update their own information
+- ✅ **QR Code Access** - Scan to update (no URL typing needed)
+- ✅ **Iframe Embedding** - Embed in company intranet (URL completely hidden)
+- ✅ **Direct Links** - Share via email/WhatsApp with pre-filled employee ID
+
+📖 **[How It Works](./HOW_IT_WORKS.md)** - Complete explanation of the update feature  
+📖 **[URL Visibility Guide](./URL_VISIBILITY_EXPLAINED.md)** - Understand what employees see
 
 ---
 
