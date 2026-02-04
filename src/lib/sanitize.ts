@@ -8,14 +8,8 @@ export function sanitizeText(text: string): string {
   // Trim whitespace
   let sanitized = text.trim();
   
-  // Remove HTML tags
+  // Remove HTML tags (includes script tags and event handlers)
   sanitized = sanitized.replace(/<[^>]*>/g, '');
-  
-  // Remove script tags specifically (extra safety)
-  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handlers
-  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
   
   // Limit length to prevent abuse
   const maxLength = 1000;
