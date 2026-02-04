@@ -163,7 +163,7 @@ const SAMPLE_EMPLOYEES: Employee[] = [
 
 function App() {
   // Check URL parameters for update mode
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const isUpdateMode = urlParams.get('mode') === 'update' || urlParams.get('update') === 'true';
   const isEmbedded = urlParams.get('embed') === 'true';
   
@@ -185,17 +185,6 @@ function App() {
       (current || []).map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp)
     );
   }, [setEmployees]);
-
-  // If in update mode, show the update page only
-  if (isUpdateMode && employees) {
-    return (
-      <EmployeeUpdatePage 
-        employees={employees} 
-        onUpdateEmployee={handleEmployeeUpdate}
-        embedded={isEmbedded}
-      />
-    );
-  }
 
   useEffect(() => {
     // Check if user is already logged in (session storage)
@@ -326,6 +315,17 @@ function App() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // If in update mode, show the update page only
+  if (isUpdateMode && employees) {
+    return (
+      <EmployeeUpdatePage 
+        employees={employees} 
+        onUpdateEmployee={handleEmployeeUpdate}
+        embedded={isEmbedded}
+      />
     );
   }
 
