@@ -1,6 +1,12 @@
 /**
  * Sanitize text input to prevent XSS attacks
- * Removes potentially dangerous HTML tags and scripts
+ * Uses multiple passes and escaping to ensure complete sanitization
+ * 
+ * Security Note: This uses a multi-layered approach:
+ * 1. Remove HTML tags (including malformed/incomplete ones)
+ * 2. Remove any remaining angle brackets
+ * 3. Escape HTML entities
+ * This defense-in-depth approach prevents XSS even if one layer fails.
  */
 export function sanitizeText(text: string): string {
   if (!text) return '';
@@ -8,8 +14,15 @@ export function sanitizeText(text: string): string {
   // Trim whitespace
   let sanitized = text.trim();
   
-  // Remove HTML tags (includes script tags and event handlers)
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  // First pass: Remove complete HTML tags (including malformed ones)
+  // This handles cases like <script>, <ScRiPt>, etc.
+  sanitized = sanitized.replace(/<[^>]*>?/gi, '');
+  
+  // Second pass: Remove any remaining < or > characters (defense in depth)
+  sanitized = sanitized.replace(/[<>]/g, '');
+  
+  // Third pass: Escape any HTML entities that might have been introduced
+  sanitized = escapeHtml(sanitized);
   
   // Limit length to prevent abuse
   const maxLength = 1000;
@@ -29,8 +42,11 @@ export function sanitizeEmail(email: string): string {
   // Trim and lowercase
   let sanitized = email.trim().toLowerCase();
   
-  // Remove any HTML
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  // Remove any HTML tags
+  sanitized = sanitized.replace(/<[^>]*>?/gi, '');
+  
+  // Remove any remaining < or > characters
+  sanitized = sanitized.replace(/[<>]/g, '');
   
   // Basic email validation pattern
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
