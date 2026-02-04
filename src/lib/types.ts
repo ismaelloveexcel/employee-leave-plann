@@ -113,6 +113,11 @@ export interface Employee {
   leaveBalanceEOY?: number; // Leave balance as of End of Year (Annual Leaves)
   offsetBalanceEOY?: number; // Offset balance as of End of Year
   
+  // Contact Information
+  phoneNumber?: string;
+  emergencyContact?: string;
+  emergencyContactPhone?: string;
+  
   // Management
   managerId?: string;
   managerEmail?: string;

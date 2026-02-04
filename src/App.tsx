@@ -16,6 +16,8 @@ import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
 import { ExportToPdf } from '@/components/ExportToPdf';
 import { ManagerView } from '@/components/ManagerView';
 import { HRAdminPanel } from '@/components/HRAdminPanel';
+import { EmployeeUpdatePage } from '@/components/EmployeeUpdatePage';
+import { UpdateLinkGenerator } from '@/components/UpdateLinkGenerator';
 import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
@@ -160,6 +162,11 @@ const SAMPLE_EMPLOYEES: Employee[] = [
 ];
 
 function App() {
+  // Check URL parameters for update mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const isUpdateMode = urlParams.get('mode') === 'update' || urlParams.get('update') === 'true';
+  const isEmbedded = urlParams.get('embed') === 'true';
+  
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
@@ -171,6 +178,24 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showHRAdmin, setShowHRAdmin] = useState(false);
+
+  // Handle employee update
+  const handleEmployeeUpdate = useCallback((updatedEmployee: Employee) => {
+    setEmployees(current => 
+      (current || []).map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp)
+    );
+  }, [setEmployees]);
+
+  // If in update mode, show the update page only
+  if (isUpdateMode && employees) {
+    return (
+      <EmployeeUpdatePage 
+        employees={employees} 
+        onUpdateEmployee={handleEmployeeUpdate}
+        embedded={isEmbedded}
+      />
+    );
+  }
 
   useEffect(() => {
     // Check if user is already logged in (session storage)
@@ -513,10 +538,15 @@ function App() {
               </button>
             </div>
             {showHRAdmin && (
-              <HRAdminPanel 
-                currentEmployees={employees || SAMPLE_EMPLOYEES}
-                onEmployeesUpdated={handleEmployeesUpdated}
-              />
+              <div className="space-y-6">
+                <HRAdminPanel 
+                  currentEmployees={employees || SAMPLE_EMPLOYEES}
+                  onEmployeesUpdated={handleEmployeesUpdated}
+                />
+                
+                {/* Update Link Generator */}
+                <UpdateLinkGenerator />
+              </div>
             )}
           </motion.div>
         )}
