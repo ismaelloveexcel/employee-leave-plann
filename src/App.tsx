@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
@@ -16,7 +16,7 @@ import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
 import { ExportToPdf } from '@/components/ExportToPdf';
 import { ManagerView } from '@/components/ManagerView';
 import { HRAdminPanel } from '@/components/HRAdminPanel';
-import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus } from '@/lib/types';
+import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
 import { dataSyncService, generateLeave2025Records } from '@/lib/data-sync-service';
@@ -166,6 +166,7 @@ function App() {
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
   const [confirmationStatuses, setConfirmationStatuses] = useKV<Record<string, ConfirmationStatus>>('confirmation-statuses', {});
+  const [auditRecords, setAuditRecords] = useKV<AuditRecord[]>('audit-records', []);
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -313,13 +314,26 @@ function App() {
     );
   }
 
-  const myRequests = (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id);
-  const usedDays = getTotalLeaveDays(myRequests);
-  const usedOffsetDays = getTotalOffsetDays(myRequests);
+  const myRequests = useMemo(
+    () => (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id),
+    [leaveRequests, currentEmployee.id]
+  );
+  
+  const usedDays = useMemo(() => getTotalLeaveDays(myRequests), [myRequests]);
+  const usedOffsetDays = useMemo(() => getTotalOffsetDays(myRequests), [myRequests]);
+  
   // Use consistent calculation: annualLeaveEntitlement + openingBalanceFromPreviousYear - usedDays
-  const remainingBalance = (currentEmployee.annualLeaveEntitlement || 0) + 
-    (currentEmployee.openingBalanceFromPreviousYear || 0) - usedDays;
-  const remainingOffsetBalance = (currentEmployee.offsetBalance || 0) - usedOffsetDays;
+  const remainingBalance = useMemo(
+    () => (currentEmployee.annualLeaveEntitlement || 0) + 
+      (currentEmployee.openingBalanceFromPreviousYear || 0) - usedDays,
+    [currentEmployee.annualLeaveEntitlement, currentEmployee.openingBalanceFromPreviousYear, usedDays]
+  );
+  
+  const remainingOffsetBalance = useMemo(
+    () => (currentEmployee.offsetBalance || 0) - usedOffsetDays,
+    [currentEmployee.offsetBalance, usedOffsetDays]
+  );
+  
   const employeeLeave2025 = (leave2025Records || SAMPLE_LEAVE_2025)[currentEmployee.id] || [];
   const employeeConfirmationStatus = (confirmationStatuses || {})[currentEmployee.id] || 'pending';
 
