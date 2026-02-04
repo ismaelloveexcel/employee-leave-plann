@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Clock, XCircle, CalendarBlank, CalendarCheck, EnvelopeSimple } from '@phosphor-icons/react';
+import { CheckCircle, Clock, XCircle, CalendarBlank, CalendarCheck, EnvelopeSimple, FunnelSimple } from '@phosphor-icons/react';
 import { LeaveRequest } from '@/lib/types';
 import { formatDateRange } from '@/lib/leave-utils';
 import { LEAVE_TYPES } from '@/lib/constants';
@@ -15,10 +17,16 @@ interface LeaveRequestListProps {
 
 export function LeaveRequestList({ requests }: LeaveRequestListProps) {
   const [emailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const sortedRequests = [...requests].sort(
     (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
+  
+  // Apply status filter
+  const filteredRequests = statusFilter === 'all' 
+    ? sortedRequests 
+    : sortedRequests.filter(req => req.status === statusFilter);
 
   const hasEmailNotification = (requestId: string): boolean => {
     return (emailNotifications || []).some(notification => 
@@ -79,15 +87,31 @@ export function LeaveRequestList({ requests }: LeaveRequestListProps) {
   return (
     <Card className="h-full">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <CalendarCheck size={20} weight="fill" className="text-primary" />
-          <CardTitle className="text-lg">My Leave Requests</CardTitle>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <CalendarCheck size={20} weight="fill" className="text-primary" />
+            <CardTitle className="text-lg">My Leave Requests</CardTitle>
+          </div>
+          {requests.length > 0 && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <FunnelSimple size={16} weight="fill" className="mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Requests</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-3">
-            {sortedRequests.map(request => {
+            {filteredRequests.map(request => {
               const emailSent = hasEmailNotification(request.id);
               
               return (

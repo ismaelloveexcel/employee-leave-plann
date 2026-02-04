@@ -416,6 +416,20 @@ function App() {
               </motion.div>
             )}
 
+            {/* Welcome message for first-time users */}
+            {myRequests.length === 0 && !currentEmployee.managerEmail && (
+              <Alert className="bg-primary/5 border-primary/20">
+                <Info size={20} weight="fill" className="text-primary" />
+                <AlertDescription>
+                  <p className="font-semibold mb-1">Welcome to Leave Planner 2026! 👋</p>
+                  <p className="text-sm text-muted-foreground">
+                    Get started by clicking <strong>Settings</strong> in the header to configure your manager's email, 
+                    then use <strong>"Request Leave"</strong> to submit your first leave request.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {remainingBalance < 5 && remainingBalance > 0 && (
               <Alert variant="destructive">
                 <Info size={20} weight="fill" />
