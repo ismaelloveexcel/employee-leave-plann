@@ -19,6 +19,7 @@ import { Plus, Info } from '@phosphor-icons/react';
 import { LeaveType, LeaveRequest } from '@/lib/types';
 import { LEAVE_TYPES } from '@/lib/constants';
 import { calculateBusinessDays, hasOverlappingDates } from '@/lib/leave-utils';
+import { sanitizeText } from '@/lib/sanitize';
 import { LeaveCalendar } from './LeaveCalendar';
 import { toast } from 'sonner';
 
@@ -84,7 +85,7 @@ export function LeaveRequestDialog({ requests, remainingBalance, remainingOffset
       endDate: endDate.toISOString().split('T')[0],
       leaveType,
       status: 'pending',
-      notes: notes.trim() || undefined,
+      notes: sanitizeText(notes) || undefined,
       totalDays: regularDaysUsed,
       offsetDays: useOffsetDays ? offsetDaysToUse : 0,
     };

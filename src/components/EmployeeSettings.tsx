@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gear, EnvelopeSimple, User, Check, X } from '@phosphor-icons/react';
 import { Employee } from '@/lib/types';
+import { sanitizeEmail } from '@/lib/sanitize';
 import { toast } from 'sonner';
 
 interface EmployeeSettingsProps {
@@ -29,7 +30,9 @@ export function EmployeeSettings({ employee, onUpdateEmployee }: EmployeeSetting
   const handleSave = () => {
     setIsSaving(true);
 
-    if (managerEmail && !isValidEmail(managerEmail)) {
+    const sanitizedEmail = sanitizeEmail(managerEmail);
+    
+    if (managerEmail && !sanitizedEmail) {
       toast.error('Invalid email address', {
         description: 'Please enter a valid manager email address.',
       });
@@ -39,13 +42,13 @@ export function EmployeeSettings({ employee, onUpdateEmployee }: EmployeeSetting
 
     const updatedEmployee: Employee = {
       ...employee,
-      managerEmail: managerEmail.trim() || undefined,
+      managerEmail: sanitizedEmail || undefined,
     };
 
     onUpdateEmployee(updatedEmployee);
 
     toast.success('Settings updated', {
-      description: managerEmail 
+      description: sanitizedEmail 
         ? 'Your manager will now receive email notifications for leave requests.'
         : 'Email notifications have been disabled.',
     });

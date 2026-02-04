@@ -10,6 +10,9 @@ const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Configure base path for GitHub Pages deployment
+  // Will use repo name as base path when deployed to GitHub Pages
+  base: process.env.NODE_ENV === 'production' ? '/employee-leave-plann/' : '/',
   plugins: [
     react(),
     tailwindcss(),

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Toaster } from 'sonner';
 import { motion } from 'framer-motion';
@@ -16,7 +16,9 @@ import { LeaveSummaryChart } from '@/components/LeaveSummaryChart';
 import { ExportToPdf } from '@/components/ExportToPdf';
 import { ManagerView } from '@/components/ManagerView';
 import { HRAdminPanel } from '@/components/HRAdminPanel';
-import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus } from '@/lib/types';
+import { EmployeeUpdatePage } from '@/components/EmployeeUpdatePage';
+import { UpdateLinkGenerator } from '@/components/UpdateLinkGenerator';
+import { Employee, LeaveRequest, Leave2025Record, ConfirmationStatus, AuditRecord } from '@/lib/types';
 import { getTotalLeaveDays, getTotalOffsetDays } from '@/lib/leave-utils';
 import { sendManagerNotification, EmailNotification } from '@/lib/email-service';
 import { dataSyncService, generateLeave2025Records } from '@/lib/data-sync-service';
@@ -160,16 +162,29 @@ const SAMPLE_EMPLOYEES: Employee[] = [
 ];
 
 function App() {
+  // Check URL parameters for update mode
+  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const isUpdateMode = urlParams.get('mode') === 'update' || urlParams.get('update') === 'true';
+  const isEmbedded = urlParams.get('embed') === 'true';
+  
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useKV<Employee[]>('employees', SAMPLE_EMPLOYEES);
   const [leaveRequests, setLeaveRequests] = useKV<LeaveRequest[]>('leave-requests', []);
   const [emailNotifications, setEmailNotifications] = useKV<EmailNotification[]>('email-notifications', []);
   const [leave2025Records, setLeave2025Records] = useKV<Record<string, Leave2025Record[]>>('leave-2025-records', SAMPLE_LEAVE_2025);
   const [confirmationStatuses, setConfirmationStatuses] = useKV<Record<string, ConfirmationStatus>>('confirmation-statuses', {});
+  const [auditRecords, setAuditRecords] = useKV<AuditRecord[]>('audit-records', []);
   const [lastNotification, setLastNotification] = useState<EmailNotification | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showHRAdmin, setShowHRAdmin] = useState(false);
+
+  // Handle employee update
+  const handleEmployeeUpdate = useCallback((updatedEmployee: Employee) => {
+    setEmployees(current => 
+      (current || []).map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp)
+    );
+  }, [setEmployees]);
 
   useEffect(() => {
     // Check if user is already logged in (session storage)
@@ -303,6 +318,17 @@ function App() {
     );
   }
 
+  // If in update mode, show the update page only
+  if (isUpdateMode && employees) {
+    return (
+      <EmployeeUpdatePage 
+        employees={employees} 
+        onUpdateEmployee={handleEmployeeUpdate}
+        embedded={isEmbedded}
+      />
+    );
+  }
+
   // Show login form if not authenticated
   if (!isAuthenticated || !currentEmployee) {
     return (
@@ -313,13 +339,26 @@ function App() {
     );
   }
 
-  const myRequests = (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id);
-  const usedDays = getTotalLeaveDays(myRequests);
-  const usedOffsetDays = getTotalOffsetDays(myRequests);
+  const myRequests = useMemo(
+    () => (leaveRequests || []).filter(req => req.employeeId === currentEmployee.id),
+    [leaveRequests, currentEmployee.id]
+  );
+  
+  const usedDays = useMemo(() => getTotalLeaveDays(myRequests), [myRequests]);
+  const usedOffsetDays = useMemo(() => getTotalOffsetDays(myRequests), [myRequests]);
+  
   // Use consistent calculation: annualLeaveEntitlement + openingBalanceFromPreviousYear - usedDays
-  const remainingBalance = (currentEmployee.annualLeaveEntitlement || 0) + 
-    (currentEmployee.openingBalanceFromPreviousYear || 0) - usedDays;
-  const remainingOffsetBalance = (currentEmployee.offsetBalance || 0) - usedOffsetDays;
+  const remainingBalance = useMemo(
+    () => (currentEmployee.annualLeaveEntitlement || 0) + 
+      (currentEmployee.openingBalanceFromPreviousYear || 0) - usedDays,
+    [currentEmployee.annualLeaveEntitlement, currentEmployee.openingBalanceFromPreviousYear, usedDays]
+  );
+  
+  const remainingOffsetBalance = useMemo(
+    () => (currentEmployee.offsetBalance || 0) - usedOffsetDays,
+    [currentEmployee.offsetBalance, usedOffsetDays]
+  );
+  
   const employeeLeave2025 = (leave2025Records || SAMPLE_LEAVE_2025)[currentEmployee.id] || [];
   const employeeConfirmationStatus = (confirmationStatuses || {})[currentEmployee.id] || 'pending';
 
@@ -416,6 +455,20 @@ function App() {
               </motion.div>
             )}
 
+            {/* Welcome message for first-time users */}
+            {myRequests.length === 0 && !currentEmployee.managerEmail && (
+              <Alert className="bg-primary/5 border-primary/20">
+                <Info size={20} weight="fill" className="text-primary" />
+                <AlertDescription>
+                  <p className="font-semibold mb-1">Welcome to Leave Planner 2026! 👋</p>
+                  <p className="text-sm text-muted-foreground">
+                    Get started by clicking <strong>Settings</strong> in the header to configure your manager's email, 
+                    then use <strong>"Request Leave"</strong> to submit your first leave request.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {remainingBalance < 5 && remainingBalance > 0 && (
               <Alert variant="destructive">
                 <Info size={20} weight="fill" />
@@ -485,10 +538,15 @@ function App() {
               </button>
             </div>
             {showHRAdmin && (
-              <HRAdminPanel 
-                currentEmployees={employees || SAMPLE_EMPLOYEES}
-                onEmployeesUpdated={handleEmployeesUpdated}
-              />
+              <div className="space-y-6">
+                <HRAdminPanel 
+                  currentEmployees={employees || SAMPLE_EMPLOYEES}
+                  onEmployeesUpdated={handleEmployeesUpdated}
+                />
+                
+                {/* Update Link Generator */}
+                <UpdateLinkGenerator />
+              </div>
             )}
           </motion.div>
         )}
