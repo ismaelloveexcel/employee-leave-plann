@@ -4,6 +4,8 @@
 
 This application is built as a client-side React application that can be deployed as static files to any web hosting service or run entirely on your local machine without any server infrastructure.
 
+> **📝 Managing Employee Data:** See **[EMPLOYEE_DATA_GUIDE.md](./EMPLOYEE_DATA_GUIDE.md)** for detailed instructions on where to store employee information and **[EMPLOYEE_TEMPLATE.md](./EMPLOYEE_TEMPLATE.md)** for ready-to-use templates.
+
 ## Quick Start - Local Development
 
 ```bash

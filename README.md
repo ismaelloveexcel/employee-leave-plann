@@ -133,11 +133,15 @@ employee-leave-plann/
 │   ├── lib/               # Utilities and types
 │   └── App.tsx            # Main application
 ├── public/                # Static assets
+│   └── data/              # 📝 Employee data storage
+│       └── employees.json # Put employee info here!
 ├── dist/                  # Build output (generated)
 ├── .github/workflows/     # GitHub Actions for deployment
 ├── vite.config.ts         # Vite configuration (static build)
 ├── netlify.toml          # Netlify deployment config
 ├── vercel.json           # Vercel deployment config
+├── EMPLOYEE_DATA_GUIDE.md # 📝 Employee data documentation
+├── EMPLOYEE_TEMPLATE.md   # Employee data templates
 ├── DEPLOYMENT.md         # Detailed deployment guide
 └── STATIC_SITE_PROPOSAL.md  # Technical proposal document
 ```
@@ -150,10 +154,15 @@ employee-leave-plann/
 - **Export/Import**: Easy backup and data portability
 - **HTTPS**: Secure when hosted (free with all hosting options)
 
+> **📝 Where to Store Employee Info:** See **[EMPLOYEE_DATA_GUIDE.md](./EMPLOYEE_DATA_GUIDE.md)** for detailed instructions on managing employee data in the static site setup.
+
 ## 📚 Documentation
 
+- **[EMPLOYEE_DATA_GUIDE.md](./EMPLOYEE_DATA_GUIDE.md)** - **NEW!** Where and how to store employee information
+- **[EMPLOYEE_TEMPLATE.md](./EMPLOYEE_TEMPLATE.md)** - **NEW!** Ready-to-use employee data templates
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Comprehensive deployment guide
 - [STATIC_SITE_PROPOSAL.md](./STATIC_SITE_PROPOSAL.md) - Technical proposal and rationale
+- [QUICK_START.md](./QUICK_START.md) - 5-minute quick start
 - [PRD.md](./PRD.md) - Product requirements and features
 - [RECOMMENDATIONS.md](./RECOMMENDATIONS.md) - Code review and improvements
 

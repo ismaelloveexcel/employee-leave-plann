@@ -2,6 +2,8 @@
 
 This guide will help you get the Employee Leave Planner running as a static website in under 5 minutes.
 
+> **💡 Need to add employee data?** See **[EMPLOYEE_DATA_GUIDE.md](./EMPLOYEE_DATA_GUIDE.md)** for where and how to store employee information.
+
 ## Option 1: Run Locally (Fastest - 2 minutes)
 
 ### Prerequisites
