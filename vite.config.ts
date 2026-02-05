@@ -22,4 +22,23 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  build: {
+    // Optimize for static deployment
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-core': ['react', 'react-dom'],
+          'ui-components': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tooltip'],
+          'utilities': ['date-fns', 'framer-motion', 'sonner']
+        }
+      }
+    }
+  },
+  // Enable relative paths for maximum deployment flexibility
+  base: './'
 });
